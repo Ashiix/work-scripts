@@ -1,8 +1,11 @@
-# Powershell script that monitors disk usage over extended periods of time, and... 
+# Powershell script that monitors disk usage over extended periods of time, save values to UDF, and... 
 # TODO: monitor usage reports and report spikes of usage
+
 # User must have access to the CentraStage registry key to save to a UDF, if run as a component it will be run as an administrator that does
 # Computer\HKEY_LOCAL_MACHINE\SOFTWARE\CentraStage
 
+# Wrap in function to prevent a partially downloaded/corrupted script from running
+function Main {
 # Set script's data path, obscured for privacy
 $data_path = "$env:script_data_path\Disk\usage_history.json"
 # UDF to save to
@@ -63,4 +66,5 @@ $usage_history | ConvertTo-Json | Out-File $data_path
 
 # Add current usage data to UDF
 REG ADD HKEY_LOCAL_MACHINE\SOFTWARE\CentraStage /v $udf /t REG_SZ /d "$percent_used_string" /f
-
+}
+Main
