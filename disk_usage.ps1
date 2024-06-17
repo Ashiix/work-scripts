@@ -62,9 +62,51 @@ $present_date_present_time = [int](Get-Date -UFormat %s -Millisecond 0)
 # Add the newly acquired data to the history odict
 $usage_history += @{[String]$present_date_present_time = $percent_used_string}
 # Save the full history odict to disk in json for use on next execution
-$usage_history | ConvertTo-Json | Out-File $data_path
+
+
+
+# REMOVE COMMENT VVVVV
+
+#$usage_history | ConvertTo-Json | Out-File $data_path
 
 # Add current usage data to UDF
 REG ADD HKEY_LOCAL_MACHINE\SOFTWARE\CentraStage /v $udf /t REG_SZ /d "$percent_used_string" /f
+
+# Iterate through previously saved usage data, save daily/weekly/monthly percent increase/decrease to UDF for each drive, 
+# output information to StdOut for recordkeeping
+#$usage_history
+$reversed_usage_history = $usage_history.GetEnumerator() | Sort-Object -Descending Name
+
+# Using the most recent timestamp value, iterate through timestamps until it finds one that is one day/week/month older
+#$usage_history.getEnumerator() | ForEach-Object { }
+# If there are 2 and the first and last are over 24 hours apart (86400), calculate daily percentage change
+if ($usage_history.Count -ge 2) {
+    foreach ($pair in $reversed_usage_history) {
+        if ($reversed_usage_history[0].Name-8400 -ge $pair.Name) {
+            $daily_name = $pair.Name
+            break
+        }
+    }
+} else {
+    Write-Output "Not enough entries to calculate daily."
+}
+$daily_name
+
+# If there are 3 and the first and last are over one week apart (604800), calculate weekly percentage change
+if ($usage_history.Count -ge 3) {
+    <# Action to perform if the condition is true #>
+} else {
+    Write-Output "Not enough entries to calculate weekly."
+}
+# If there are 4 and the first and last are over one month apart (2592000), calculate monthly percentage change
+if ($usage_history.Count -ge 4) {
+    <# Action to perform if the condition is true #>
+} else {
+    Write-Output "Not enough entries to calculate monthly."
+}
+
+
+
+# Save data in the format:    Daily - DRIVE:CHANGE%, DRIVE:CHANGE% | Weekly - DRIVE:CHANGE%, DRIVE:CHANGE% | Monthly - DRIVE:CHANGE%, DRIVE:CHANGE%
 }
 Main
