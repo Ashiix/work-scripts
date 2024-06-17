@@ -1,9 +1,12 @@
 # Powershell script that monitors disk usage over extended periods of time, and... 
-# TODO: save data to a Datto UDF
 # TODO: monitor usage reports and report spikes of usage
+# User must have access to the CentraStage registry key to save to a UDF, if run as a component it will be run as an administrator that does
+# Computer\HKEY_LOCAL_MACHINE\SOFTWARE\CentraStage
 
 # Set script's data path, obscured for privacy
 $data_path = "$env:script_data_path\Disk\usage_history.json"
+# UDF to save to
+$udf = "Custom18"
 
 #Initialize variables
 $prev_percent_used = [Ordered]@{}
@@ -57,3 +60,7 @@ $present_date_present_time = [int](Get-Date -UFormat %s -Millisecond 0)
 $usage_history += @{[String]$present_date_present_time = $percent_used_string}
 # Save the full history odict to disk in json for use on next execution
 $usage_history | ConvertTo-Json | Out-File $data_path
+
+# Add current usage data to UDF
+REG ADD HKEY_LOCAL_MACHINE\SOFTWARE\CentraStage /v $udf /t REG_SZ /d "$percent_used_string" /f
+
