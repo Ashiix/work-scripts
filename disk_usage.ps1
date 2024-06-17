@@ -1,3 +1,7 @@
+# Powershell script that monitors disk usage over extended periods of time, and... 
+# TODO: save data to a Datto UDF
+# TODO: monitor usage reports and report spikes of usage
+
 # Set script's data path, obscured for privacy
 $data_path = "$env:script_data_path\Disk\usage_history.json"
 
@@ -16,9 +20,6 @@ if (!(Test-Path $data_path)) {
     New-Item $data_path
 }
 
-# Convert values to a hash table
-($used_json).psobject.properties | ForEach-Object { $prev_percent_used[$_.Name] = $_.Value }
-
 # Fetch usage data from Win32_LogicalDisk and filter out excess data
 $usage_table = (Get-CimInstance -ClassName Win32_LogicalDisk | Select-Object -Property DeviceID, @{'Name' = 'Size'; Expression = { [int]($_.Size / 1GB) }}, @{'Name' = 'Free'; Expression = { [int]($_.FreeSpace / 1GB) }}) | Out-String
 # Remove trailing : from the drive identifier to make values easier to work with
@@ -35,7 +36,6 @@ for ($line = 2; $line -lt $table_elements; $line++) {
     # Calculate a whole number percentage for used drive
     $percent_used += @{$iterated_drive = ([int]((([int]$iterated_drive_usage.Split(' ')[0] - [int]$iterated_drive_usage.Split(' ')[1]) / [int]$iterated_drive_usage.Split(' ')[0]) * 100))}
 }
-
 # Remove trailing space from iterated list
 $drives_iterated = $drives_iterated.Trim()
 # Iterate through each object in odict and check if the usage has a 30% or higher spike, if so send an error that will be recognized by Datto
@@ -57,4 +57,3 @@ $present_date_present_time = [int](Get-Date -UFormat %s -Millisecond 0)
 $usage_history += @{[String]$present_date_present_time = $percent_used_string}
 # Save the full history odict to disk in json for use on next execution
 $usage_history | ConvertTo-Json | Out-File $data_path
-
