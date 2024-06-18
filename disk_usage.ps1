@@ -18,6 +18,9 @@ $percent_used = [Ordered]@{}
 $usage_history = [Ordered]@{}
 Set-Item env:used_drives -Value('')
 $percent_used_string = ""
+$daily_name = ""
+$weekly_name = ""
+$monthly_name = ""
 
 # Create directory for script data if it doesn't exist
 if (!(Test-Path $data_path)) {
@@ -87,20 +90,32 @@ if ($usage_history.Count -ge 2) {
             break
         }
     }
+    $daily_name
 } else {
     Write-Output "Not enough entries to calculate daily."
 }
-$daily_name
 
 # If there are 3 and the first and last are over one week apart (604800), calculate weekly percentage change
 if ($usage_history.Count -ge 3) {
-    <# Action to perform if the condition is true #>
+    foreach ($pair in $reversed_usage_history) {
+        if ($reversed_usage_history[0].Name-604800 -ge $pair.Name) {
+            $weekly_name = $pair.Name
+            break
+        }
+    }
+    $weekly_name
 } else {
     Write-Output "Not enough entries to calculate weekly."
 }
 # If there are 4 and the first and last are over one month apart (2592000), calculate monthly percentage change
 if ($usage_history.Count -ge 4) {
-    <# Action to perform if the condition is true #>
+    foreach ($pair in $reversed_usage_history) {
+        if ($reversed_usage_history[0].Name-2592000 -ge $pair.Name) {
+            $monthly_name = $pair.Name
+            break
+        }
+    }
+    $monthly_name
 } else {
     Write-Output "Not enough entries to calculate monthly."
 }
