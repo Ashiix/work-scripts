@@ -3,15 +3,19 @@
 # User must have access to the CentraStage registry key to save to a UDF, if run as a component it will be run as an administrator that does
 # Computer\HKEY_LOCAL_MACHINE\SOFTWARE\CentraStage
 
+
+# CONFIG
+# Set script's data path, obscured for privacy; must either have the data path ($env:script_data_path) be set in Datto,
+# or be changed to include full path
+$data_path = "$env:script_data_path\Disk\usage_history.json"
+# UDF to save to data to; must be changed to target UDF
+$udf = "Custom18"
+# ^ CONFIG ^
+
+
 # Wrap in function to prevent a partially downloaded/corrupted script from running
 function Main {
-# Set script's data path, obscured for privacy
-$data_path = "$env:script_data_path\Disk\usage_history.json"
-# UDF to save to
-$udf = "Custom18"
-
 #Initialize variables
-$prev_percent_used = [Ordered]@{}
 $drives_iterated = ''
 $percent_used = [Ordered]@{}
 $usage_history = [Ordered]@{}
@@ -47,12 +51,7 @@ for ($line = 2; $line -lt $table_elements; $line++) {
 }
 # Remove trailing space from iterated list
 $drives_iterated = $drives_iterated.Trim()
-# Iterate through each object in odict and check if the usage has a 30% or higher spike, if so send an error that will be recognized by Datto
-$prev_percent_used.GetEnumerator() | ForEach-Object {
-    if ($percent_used[$_.Key]*1.30 -le $_.Value) {
-        "Extreme usage spike detected on {0} drive!" -f $_.Key
-    }
-}
+
 # Create a string with the percentage used to store in the $usage_history odict
 $percent_used.GetEnumerator() | ForEach-Object {
     $percent_used_string +=  $_.Key + ":" + $_.Value + " | "
