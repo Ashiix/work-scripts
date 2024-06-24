@@ -81,7 +81,7 @@ if ($usage_history.Count -ge 3) {
         }
     }
     $daily_prev_used = $daily_used_string.replace(' ', '').split('|')
-    for ($i = 0; $i -lt $daily_prev_used.Count-1; $i++) {
+    for ($i = 0; $i -lt $percent_used.Count; $i++) {
         # Get previous usage
         $iterated_old_usage = $daily_prev_used[$i].split(':')[1]
         # Get current usage
@@ -91,6 +91,7 @@ if ($usage_history.Count -ge 3) {
 } else {
     Write-Output "Not enough entries to calculate daily."
 }
+
 # If there are 3 and the first and last are over one week apart (604800), calculate weekly percentage change
 if ($usage_history.Count -ge 4) {
     foreach ($pair in $reversed_usage_history) {
@@ -101,7 +102,7 @@ if ($usage_history.Count -ge 4) {
         }
     }
     $weekly_prev_used = $weekly_used_string.replace(' ', '').split('|')
-    for ($i = 0; $i -lt $weekly_prev_used.Count-1; $i++) {
+    for ($i = 0; $i -lt $percent_used.Count; $i++) {
         # Get previous usage
         $iterated_old_usage = $weekly_prev_used[$i].split(':')[1]
         # Get current usage
@@ -121,7 +122,7 @@ if ($usage_history.Count -ge 5) {
         }
     }
     $monthly_prev_used = $monthly_used_string.replace(' ', '').split('|')
-    for ($i = 0; $i -lt $monthly_prev_used.Count-1; $i++) {
+    for ($i = 0; $i -lt $percent_used.Count; $i++) {
         # Get previous usage
         $iterated_old_usage = $monthly_prev_used[$i].split(':')[1]
         # Get current usage
