@@ -18,9 +18,12 @@ $percent_used = [Ordered]@{}
 $usage_history = [Ordered]@{}
 Set-Item env:used_drives -Value('')
 $percent_used_string = ""
-$daily_name = ""
-$weekly_name = ""
-$monthly_name = ""
+$daily_change = [Ordered]@{}
+$weekly_change = [Ordered]@{}
+$monthly_change = [Ordered]@{}
+#$daily_name = ""
+#$weekly_name = ""
+#$monthly_name = ""
 
 # Create directory for script data if it doesn't exist
 if (!(Test-Path $data_path)) {
@@ -65,63 +68,87 @@ $present_date_present_time = [int](Get-Date -UFormat %s -Millisecond 0)
 # Add the newly acquired data to the history odict
 $usage_history += @{[String]$present_date_present_time = $percent_used_string}
 # Save the full history odict to disk in json for use on next execution
-
-
-
-# REMOVE COMMENT VVVVV
-
-#$usage_history | ConvertTo-Json | Out-File $data_path
+$usage_history | ConvertTo-Json | Out-File $data_path
 
 # Add current usage data to UDF
 REG ADD HKEY_LOCAL_MACHINE\SOFTWARE\CentraStage /v $udf /t REG_SZ /d "$percent_used_string" /f
 
 # Iterate through previously saved usage data, save daily/weekly/monthly percent increase/decrease to UDF for each drive, 
 # output information to StdOut for recordkeeping
-#$usage_history
 $reversed_usage_history = $usage_history.GetEnumerator() | Sort-Object -Descending Name
 
 # Using the most recent timestamp value, iterate through timestamps until it finds one that is one day/week/month older
-#$usage_history.getEnumerator() | ForEach-Object { }
 # If there are 2 and the first and last are over 24 hours apart (86400), calculate daily percentage change
-if ($usage_history.Count -ge 2) {
+if ($usage_history.Count -ge 3) {
     foreach ($pair in $reversed_usage_history) {
-        if ($reversed_usage_history[0].Name-8400 -ge $pair.Name) {
-            $daily_name = $pair.Name
+        # Find most recent usage that is older than one day
+        if ($reversed_usage_history[0].Name-86400 -ge $pair.Name) {
+            $daily_used_string = $pair.Value
             break
         }
     }
-    $daily_name
+    $daily_prev_used = $daily_used_string.replace(' ', '').split('|')
+    for ($i = 0; $i -lt $daily_prev_used.Count-1; $i++) {
+        # Get previous usage
+        $iterated_old_usage = $daily_prev_used[$i].split(':')[1]
+        # Get current usage
+        $iterated_current_usage = $percent_used_string.replace(' ', '').split('|')[$i].split(':')[1]
+        $daily_change += @{$daily_prev_used[$i].split(':')[0] = [int]((($iterated_current_usage - $iterated_old_usage) / $iterated_old_usage) * 100)}
+    }
 } else {
     Write-Output "Not enough entries to calculate daily."
 }
 
 # If there are 3 and the first and last are over one week apart (604800), calculate weekly percentage change
-if ($usage_history.Count -ge 3) {
+if ($usage_history.Count -ge 4) {
     foreach ($pair in $reversed_usage_history) {
+        # Find most recent usage that is older than one day
         if ($reversed_usage_history[0].Name-604800 -ge $pair.Name) {
-            $weekly_name = $pair.Name
+            $weekly_used_string = $pair.Value
             break
         }
     }
-    $weekly_name
+    $weekly_prev_used = $weekly_used_string.replace(' ', '').split('|')
+    for ($i = 0; $i -lt $weekly_prev_used.Count-1; $i++) {
+        # Get previous usage
+        $iterated_old_usage = $weekly_prev_used[$i].split(':')[1]
+        # Get current usage
+        $iterated_current_usage = $percent_used_string.replace(' ', '').split('|')[$i].split(':')[1]
+        $weekly_change += @{$weekly_prev_used[$i].split(':')[0] = [int]((($iterated_current_usage - $iterated_old_usage) / $iterated_old_usage) * 100)}
+    }
 } else {
     Write-Output "Not enough entries to calculate weekly."
 }
+
 # If there are 4 and the first and last are over one month apart (2592000), calculate monthly percentage change
-if ($usage_history.Count -ge 4) {
+if ($usage_history.Count -ge 5) {
     foreach ($pair in $reversed_usage_history) {
+        # Find most recent usage that is older than one day
         if ($reversed_usage_history[0].Name-2592000 -ge $pair.Name) {
-            $monthly_name = $pair.Name
+            $monthly_used_string = $pair.Value
             break
         }
     }
-    $monthly_name
+    $monthly_prev_used = $monthly_used_string.replace(' ', '').split('|')
+    for ($i = 0; $i -lt $monthly_prev_used.Count-1; $i++) {
+        # Get previous usage
+        $iterated_old_usage = $monthly_prev_used[$i].split(':')[1]
+        # Get current usage
+        $iterated_current_usage = $percent_used_string.replace(' ', '').split('|')[$i].split(':')[1]
+        $monthly_change += @{$monthly_prev_used[$i].split(':')[0] = [int]((($iterated_current_usage - $iterated_old_usage) / $iterated_old_usage) * 100)}
+    }
 } else {
     Write-Output "Not enough entries to calculate monthly."
 }
 
+"Daily change:"
+$daily_change
 
+"Weekly change:"
+$weekly_change
 
+"Monthly change:"
+$monthly_change
 # Save data in the format:    Daily - DRIVE:CHANGE%, DRIVE:CHANGE% | Weekly - DRIVE:CHANGE%, DRIVE:CHANGE% | Monthly - DRIVE:CHANGE%, DRIVE:CHANGE%
 }
 Main
