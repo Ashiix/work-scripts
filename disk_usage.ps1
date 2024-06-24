@@ -1,5 +1,4 @@
-# Powershell script that monitors disk usage over extended periods of time, save values to UDF, and... 
-# TODO: monitor usage reports and report spikes of usage
+# Powershell script that monitors disk usage over extended periods of time and saves the percentage change in a Datto UDF
 
 # User must have access to the CentraStage registry key to save to a UDF, if run as a component it will be run as an administrator that does
 # Computer\HKEY_LOCAL_MACHINE\SOFTWARE\CentraStage
@@ -21,9 +20,7 @@ $percent_used_string = ""
 $daily_change = [Ordered]@{}
 $weekly_change = [Ordered]@{}
 $monthly_change = [Ordered]@{}
-#$daily_name = ""
-#$weekly_name = ""
-#$monthly_name = ""
+$udf_string = ""
 
 # Create directory for script data if it doesn't exist
 if (!(Test-Path $data_path)) {
@@ -70,9 +67,6 @@ $usage_history += @{[String]$present_date_present_time = $percent_used_string}
 # Save the full history odict to disk in json for use on next execution
 $usage_history | ConvertTo-Json | Out-File $data_path
 
-# Add current usage data to UDF
-REG ADD HKEY_LOCAL_MACHINE\SOFTWARE\CentraStage /v $udf /t REG_SZ /d "$percent_used_string" /f
-
 # Iterate through previously saved usage data, save daily/weekly/monthly percent increase/decrease to UDF for each drive, 
 # output information to StdOut for recordkeeping
 $reversed_usage_history = $usage_history.GetEnumerator() | Sort-Object -Descending Name
@@ -98,11 +92,10 @@ if ($usage_history.Count -ge 3) {
 } else {
     Write-Output "Not enough entries to calculate daily."
 }
-
 # If there are 3 and the first and last are over one week apart (604800), calculate weekly percentage change
 if ($usage_history.Count -ge 4) {
     foreach ($pair in $reversed_usage_history) {
-        # Find most recent usage that is older than one day
+        # Find most recent usage that is older than one week
         if ($reversed_usage_history[0].Name-604800 -ge $pair.Name) {
             $weekly_used_string = $pair.Value
             break
@@ -119,11 +112,10 @@ if ($usage_history.Count -ge 4) {
 } else {
     Write-Output "Not enough entries to calculate weekly."
 }
-
 # If there are 4 and the first and last are over one month apart (2592000), calculate monthly percentage change
 if ($usage_history.Count -ge 5) {
     foreach ($pair in $reversed_usage_history) {
-        # Find most recent usage that is older than one day
+        # Find most recent usage that is older than one month
         if ($reversed_usage_history[0].Name-2592000 -ge $pair.Name) {
             $monthly_used_string = $pair.Value
             break
@@ -141,14 +133,40 @@ if ($usage_history.Count -ge 5) {
     Write-Output "Not enough entries to calculate monthly."
 }
 
-"Daily change:"
-$daily_change
+# Add daily data if it exists
+if ($daily_change.Keys -gt 0) {
+    $udf_string = "Daily - "
+    foreach ($pair in $daily_change.GetEnumerator()) {
+        $pair_drive = $pair.Name
+        $pair_change = $pair.Value
+        $udf_string += "${pair_drive}:$pair_change%, "
+    }
+    $udf_string = $udf_string.Substring(0, $udf_string.Length-2)
+}
+# Add weekly data if it exists
+if ($weekly_change.Keys -gt 0) {
+    $udf_string += " | Weekly - "
+    foreach ($pair in $weekly_change.GetEnumerator()) {
+        $pair_drive = $pair.Name
+        $pair_change = $pair.Value
+        $udf_string += "${pair_drive}:$pair_change%, "
+    }
+    $udf_string = $udf_string.Substring(0, $udf_string.Length-2)
+}
+# Add monthly data if it exists
+if ($monthly_change.Keys -gt 0) {
+    $udf_string += " | Monthly - "
+    foreach ($pair in $monthly_change.GetEnumerator()) {
+        $pair_drive = $pair.Name
+        $pair_change = $pair.Value
+        $udf_string += "${pair_drive}:$pair_change%, "
+    }
+    $udf_string = $udf_string.Substring(0, $udf_string.Length-2)
+}
 
-"Weekly change:"
-$weekly_change
-
-"Monthly change:"
-$monthly_change
-# Save data in the format:    Daily - DRIVE:CHANGE%, DRIVE:CHANGE% | Weekly - DRIVE:CHANGE%, DRIVE:CHANGE% | Monthly - DRIVE:CHANGE%, DRIVE:CHANGE%
+# Write data to console
+Write-Output $udf_string
+# Add history data to UDF
+REG ADD HKEY_LOCAL_MACHINE\SOFTWARE\CentraStage /v $udf /t REG_SZ /d "$udf_string" /f
 }
 Main
