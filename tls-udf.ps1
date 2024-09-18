@@ -1,5 +1,7 @@
 # Prevent running partial script
 function TLS_UDF {
+
+# Get list of protocols
 $protocols = ""
 # Navigate to the protocols registry entries
 Set-Location -Path "HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols"
@@ -10,8 +12,21 @@ Get-ChildItem -Path . | ForEach-Object {
 # Remove trailing |
 $protocols = "$($protocols[0..($protocols.Length-2)] -join '')"
 
+# Get list of ciphers
+$ciphers = ""
+# Navigate to the ciphers registry entries
+Set-Location -Path "HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Ciphers"
+# Iterate thru and extract key name
+Get-ChildItem -Path . | ForEach-Object {
+    $ciphers = "$($ciphers.Trim())$($_.Name.Split('\')[-1])|"
+}
+# Remove trailing |
+$ciphers = "$($ciphers[0..($ciphers.Length-2)] -join '')"
+
+
+
 # Create new UDF string from existing strings
-$udf_string = "$($protocols)"
+$udf_string = "Enabled Protocols: $($protocols)     Enabled Ciphers: $($ciphers)"
 $udf_string
 # Update UDF
 REG ADD HKEY_LOCAL_MACHINE\SOFTWARE\CentraStage /v "Custom27" /t REG_SZ /d $udf_string /f
