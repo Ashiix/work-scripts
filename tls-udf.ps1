@@ -1,131 +1,54 @@
 # Prevent running partial script
 function TLS_UDF {
-
-# Get list of protocols
-$protocols = ""
-# Navigate to the protocols registry entries
+# HANDLE PROTOCOLS
+# Get list of existing protocol keys
+$protocol_keys = ""
+# Navigate to the protocol registry entries
 Set-Location -Path "HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols"
 # Iterate thru and extract key name
 Get-ChildItem -Path . | ForEach-Object {
-    $protocols = "$($protocols.Trim())$($_.Name.Split('\')[-1])|"
+    $protocol_keys = "$($protocol_keys.Trim())$($_.Name.Split('\')[-1])|"
 }
 # Remove trailing |
-$protocols = "$($protocols[0..($protocols.Length-2)] -join '')"
+$protocol_keys = "$($protocol_keys[0..($protocol_keys.Length-2)] -join '')"
+# Extract list of enabled protocols from the previously generated list
+$enabled_protocols = ""
+# Iterate thru gathered keys to check if they are enabled
+$protocol_keys.Split('|') | ForEach-Object {
+    if (-not ((Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\$($_)\Client").Enabled) -eq 0) {
+        $enabled_protocols = "$($enabled_protocols.Trim())$($_)|"
+    }
+}
+# Remove trailing |
+$enabled_protocols = "$($enabled_protocols[0..($enabled_protocols.Length-2)] -join '')"
 
-# Get list of ciphers
-$ciphers = ""
-# Navigate to the ciphers registry entries
+# HANDLE CIPHERS
+# Get list of cipher keys
+$cipher_keys = ""
+# Navigate to the cipher registry entries
 Set-Location -Path "HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Ciphers"
 # Iterate thru and extract key name
 Get-ChildItem -Path . | ForEach-Object {
-    $ciphers = "$($ciphers.Trim())$($_.Name.Split('\')[-1])|"
+    $cipher_keys = "$($cipher_keys.Trim())$($_.Name.Split('\')[-1])|"
 }
 # Remove trailing |
-$ciphers = "$($ciphers[0..($ciphers.Length-2)] -join '')"
-
-
+$cipher_keys = "$($cipher_keys[0..($cipher_keys.Length-2)] -join '')"
+# Extract list of enabled ciphers from the previously generated list
+$enabled_ciphers = ""
+# Iterate thru gathered keys to check if they are enabled
+$cipher_keys.Split('|') | ForEach-Object {
+    if (-not ((Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Ciphers\$($_)").Enabled) -eq 0) {
+        $enabled_ciphers = "$($enabled_ciphers.Trim())$($_)|"
+    }
+}
+# Remove trailing |
+$enabled_ciphers = "$($enabled_ciphers[0..($enabled_ciphers.Length-2)] -join '')"
 
 # Create new UDF string from existing strings
-$udf_string = "Enabled Protocols: $($protocols)     Enabled Ciphers: $($ciphers)"
+$udf_string = "Enabled protocols: $($enabled_protocols)     Enabled ciphers: $($enabled_ciphers)"
 $udf_string
 # Update UDF
 REG ADD HKEY_LOCAL_MACHINE\SOFTWARE\CentraStage /v "Custom27" /t REG_SZ /d $udf_string /f
 }
 # Run
 TLS_UDF
-
-# [HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL]
-# "EventLogging"=dword:00000001
-
-# [HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Ciphers]
-
-# [HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Ciphers\RC4 128/128]
-# "Enabled"=dword:00000000
-
-# [HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Ciphers\RC4 40/128]
-# "Enabled"=dword:00000000
-
-# [HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Ciphers\RC4 56/128]
-# "Enabled"=dword:00000000
-
-# [HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Ciphers\Triple DES 168]
-# "Enabled"=dword:00000000
-
-# [HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\CipherSuites]
-
-# [HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Hashes]
-
-# [HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\KeyExchangeAlgorithms]
-
-# [HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols]
-
-# [HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\Multi-Protocol Unified Hello]
-
-# [HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\Multi-Protocol Unified Hello\Client]
-# "Enabled"=dword:00000000
-# "DisabledByDefault"=dword:00000001
-
-# [HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\Multi-Protocol Unified Hello\Server]
-# "Enabled"=dword:00000000
-# "DisabledByDefault"=dword:00000001
-
-# [HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\PCT 1.0]
-
-# [HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\PCT 1.0\Client]
-# "Enabled"=dword:00000000
-# "DisabledByDefault"=dword:00000001
-
-# [HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\PCT 1.0\Server]
-# "Enabled"=dword:00000000
-# "DisabledByDefault"=dword:00000001
-
-# [HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\SSL 2.0]
-
-# [HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\SSL 2.0\Client]
-# "DisabledByDefault"=dword:00000001
-# "Enabled"=dword:00000000
-
-# [HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\SSL 2.0\Server]
-# "Enabled"=dword:00000000
-# "DisabledByDefault"=dword:00000001
-
-# [HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\SSL 3.0]
-
-# [HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\SSL 3.0\Client]
-# "DisabledByDefault"=dword:00000001
-# "Enabled"=dword:00000000
-
-# [HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\SSL 3.0\Server]
-# "Enabled"=dword:00000000
-# "DisabledByDefault"=dword:00000001
-
-# [HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.0]
-
-# [HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.0\Client]
-# "Enabled"=dword:00000000
-# "DisabledByDefault"=dword:00000001
-
-# [HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.0\Server]
-# "Enabled"=dword:00000000
-# "DisabledByDefault"=dword:00000001
-
-# [HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.1]
-
-# [HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.1\Client]
-# "Enabled"=dword:ffffffff
-# "DisabledByDefault"=dword:00000001
-
-# [HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.1\Server]
-# "Enabled"=dword:ffffffff
-# "DisabledByDefault"=dword:00000001
-
-# [HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.2]
-
-# [HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.2\Client]
-# "Enabled"=dword:ffffffff
-# "DisabledByDefault"=dword:00000000
-
-# [HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.2\Server]
-# "Enabled"=dword:ffffffff
-# "DisabledByDefault"=dword:00000000
-
