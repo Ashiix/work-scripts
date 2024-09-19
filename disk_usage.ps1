@@ -14,7 +14,7 @@ $udf = "Custom18"
 
 
 # Wrap in function to prevent a partially downloaded/corrupted script from running
-function Main {
+function disk_usage {
 #Initialize variables
 $drives_iterated = ''
 $percent_used = [Ordered]@{}
@@ -169,4 +169,4 @@ Write-Output $udf_string
 # Add history data to UDF
 REG ADD HKEY_LOCAL_MACHINE\SOFTWARE\CentraStage /v $udf /t REG_SZ /d "$udf_string" /f
 }
-Main
+disk_usage

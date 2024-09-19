@@ -1,5 +1,5 @@
 # Prevent running partial script
-function TLS_UDF {
+function tls_udf {
     # HANDLE PROTOCOLS
     # Get list of existing protocol keys
     $protocol_keys = ""
@@ -51,4 +51,4 @@ function TLS_UDF {
     REG ADD HKEY_LOCAL_MACHINE\SOFTWARE\CentraStage /v "Custom27" /t REG_SZ /d $udf_string /f
 }
 # Run
-TLS_UDF
+tls_udf
