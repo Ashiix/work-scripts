@@ -75,12 +75,23 @@ function verify_values {
 }
 
 function configure_tls {
+    Write-Host "Checking status of registry keys..."
     $existing_keys = verify_keys
+    Write-Host "Done.`r`nChecking status of registry values..."
     $existing_values = verify_values
-    if (($existing_keys -eq 5) -and ($existing_values -eq 8)) {
-        Write-Host
+    Write-Host "Done."
+    if (-not ($existing_keys -eq 5) -and ($existing_values -eq 8)) {
+        Write-Host "TLS 1.2 is already configured on this machine, no reboot required, exiting."
+        exit 0
     }
-    Write-Host "Existing keys: $($existing_keys)`r`nExisting values: $($existing_values)"
+    else {
+        Write-Host "TLS 1.2 successfully configured. Scheduling reboot."
+        $epoch = [System.DateTimeOffset]::new((Get-Date)).ToUnixTimeSeconds()
+        $target = (([int](($epoch / 86400)))*86400) # No need to add any time as we are UTC-4, reboot will be scheduled for same day at 8 PM
+        $delay = $target - $epoch
+        shutdown.exe /r /t $delay
+        #Write-Host "Existing keys: $($existing_keys)`r`nExisting values: $($existing_values)"
+    }
 }
 
 configure_tls
