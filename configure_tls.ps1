@@ -100,11 +100,17 @@ function configure_tls {
         exit 0
     }
     else {
-        Write-Host "TLS 1.2 successfully configured. Scheduling reboot."
-        $epoch = [System.DateTimeOffset]::new((Get-Date)).ToUnixTimeSeconds()
-        $target = (([int](($epoch / 86400))) * 86400) # No need to add any time as we are UTC-4, reboot will be scheduled for same day at 8 PM
-        $delay = $target - $epoch
-        shutdown.exe /r /t $delay
+        Write-Host "TLS 1.2 successfully configured, reboot required for changes to take effect."
+        if ($env:schedule_reboot) {
+            Write-Host "Automatically scheduling reboot."
+            $epoch = [System.DateTimeOffset]::new((Get-Date)).ToUnixTimeSeconds()
+            $target = (([int](($epoch / 86400))) * 86400) # No need to add any time as we are UTC-4, reboot will be scheduled for same day at 8 PM
+            $delay = $target - $epoch
+            shutdown.exe /r /t $delay
+        } else {
+            Write-Host "Automatic scheduling disabled."
+        }
+
     }
 }
 
