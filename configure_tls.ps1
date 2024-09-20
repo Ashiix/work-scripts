@@ -75,6 +75,21 @@ function verify_values {
 }
 
 function configure_tls {
+    Write-Host "Checking if ADSync is running..."
+    try {
+        $sync_state = (Get-Service "ADSync" -ErrorAction Stop | Select-Object Status) 
+        $sync_state = [bool]($sync_state -match "Running")
+        if ($sync_state) { Write-Output "ADSync installed and running, proceeding with configuration." }
+        else {
+            Write-Output "ADSync installed but not running, no need to configure: exiting."
+            exit 0
+        }
+    }
+    catch {
+        Write-Host "ADSync not installed on machine, no need to configure: exiting."
+        exit 0
+    }
+
     Write-Host "Checking status of registry keys..."
     $existing_keys = verify_keys
     Write-Host "Done.`r`nChecking status of registry values..."
@@ -87,10 +102,9 @@ function configure_tls {
     else {
         Write-Host "TLS 1.2 successfully configured. Scheduling reboot."
         $epoch = [System.DateTimeOffset]::new((Get-Date)).ToUnixTimeSeconds()
-        $target = (([int](($epoch / 86400)))*86400) # No need to add any time as we are UTC-4, reboot will be scheduled for same day at 8 PM
+        $target = (([int](($epoch / 86400))) * 86400) # No need to add any time as we are UTC-4, reboot will be scheduled for same day at 8 PM
         $delay = $target - $epoch
         shutdown.exe /r /t $delay
-        #Write-Host "Existing keys: $($existing_keys)`r`nExisting values: $($existing_values)"
     }
 }
 
