@@ -14,7 +14,7 @@ function verify_keys {
     # .NET key
     try { New-Item "HKLM:\SOFTWARE\Microsoft\.NETFramework\v4.0.30319" -ErrorAction Stop }
     catch { $existing_keys++ }
-    # .NET Node key
+    # .NET x86 key
     try { New-Item "HKLM:\SOFTWARE\WOW6432Node\Microsoft\.NETFramework\v4.0.30319" -ErrorAction Stop }
     catch { $existing_keys++ }
     # Return how many keys already existed
@@ -59,7 +59,7 @@ function verify_values {
     }
     else { $existing_values++ }
 
-    # .NET Node values
+    # .NET x86 values
     $path = "HKLM:\SOFTWARE\WOW6432Node\Microsoft\.NETFramework\v4.0.30319"    
     if (-not ((Get-ItemProperty -Path $path).SystemDefaultTlsVersions -eq 1)) {
         Set-ItemProperty -Path $path -Name "SystemDefaultTlsVersions" -Value '1' -Type "DWord"
@@ -74,8 +74,59 @@ function verify_values {
     return $existing_values
 }
 
+function update_udf {
+    $bad_values = ""
+
+    # Server values
+    $path = "HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.2\Server"    
+    if (-not ((Get-ItemProperty -Path $path).Enabled -eq 1)) {
+        $bad_values += "S_Enabled | "
+    }
+    if (-not ((Get-ItemProperty -Path $path).DisabledByDefault -eq 0)) {
+        $bad_values += "S_DBD | "
+    }
+
+    # Client values
+    $path = "HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.2\Client"    
+    if (-not ((Get-ItemProperty -Path $path).Enabled -eq 1)) {
+        $bad_values += "C_Enabled | "
+    }
+    if (-not ((Get-ItemProperty -Path $path).DisabledByDefault -eq 0)) {
+        $bad_values += "C_DBD | "
+    }
+
+    # .NET values
+    $path = "HKLM:\SOFTWARE\Microsoft\.NETFramework\v4.0.30319"    
+    if (-not ((Get-ItemProperty -Path $path).SystemDefaultTlsVersions -eq 1)) {
+        $bad_values += ".N_TLS | "
+    }
+    if (-not ((Get-ItemProperty -Path $path).SchUseStrongCrypto -eq 1)) {
+        $bad_values += ".N_SC | "
+    }
+
+    # .NET x86 values
+    $path = "HKLM:\SOFTWARE\WOW6432Node\Microsoft\.NETFramework\v4.0.30319"    
+    if (-not ((Get-ItemProperty -Path $path).SystemDefaultTlsVersions -eq 1)) {
+        $bad_values += ".N_x86_TLS | "
+    }
+    if (-not ((Get-ItemProperty -Path $path).SchUseStrongCrypto -eq 1)) {
+        $bad_values += ".N_x86_SC | "
+    }
+
+    # Create UDF string
+    if ($bad_values.Length -eq 0) {
+        $udf_string = "TLS 1.2 properly configured"
+    }
+    else {
+        $udf_string = "Values misconfigured: $(($bad_values[0..($bad_values.Length-3)]) -join '')"
+    }
+
+    # Update UDF
+    REG ADD HKEY_LOCAL_MACHINE\SOFTWARE\CentraStage /v "Custom27" /t REG_SZ /d "$($udf_string)" /f
+}
+
 function configure_tls {
-    Write-Host "Checking if ADSync is running..."
+    Write-Host "Checking ADSync status..."
     try {
         $sync_state = (Get-Service "ADSync" -ErrorAction Stop | Select-Object Status) 
         $sync_state = [bool]($sync_state -match "Running")
@@ -86,7 +137,7 @@ function configure_tls {
         }
     }
     catch {
-        Write-Host "ADSync not installed on machine, no need to configure: exiting."
+        Write-Host "ADSync not installed on machine, no need to configure: exiting"
         exit 0
     }
 
@@ -96,8 +147,7 @@ function configure_tls {
     $existing_values = verify_values
     Write-Host "Done."
     if (($existing_keys -eq 5) -and ($existing_values -eq 8)) {
-        Write-Host "TLS 1.2 is already configured on this machine, no reboot required, exiting."
-        exit 0
+        Write-Host "TLS 1.2 is already configured on this machine, no reboot required."
     }
     else {
         Write-Host "TLS 1.2 successfully configured, reboot required for changes to take effect."
@@ -107,11 +157,14 @@ function configure_tls {
             $target = (([int](($epoch / 86400))) * 86400) # No need to add any time as we are UTC-4, reboot will be scheduled for same day at 8 PM
             $delay = $target - $epoch
             shutdown.exe /r /t $delay
-        } else {
+        }
+        else {
             Write-Host "Automatic scheduling disabled."
         }
-
     }
+
+    Write-Host "Updating UDF..."
+    update_udf
 }
 
 configure_tls
