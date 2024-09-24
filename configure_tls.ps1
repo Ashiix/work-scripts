@@ -1,4 +1,4 @@
-# PowerShell script that enabled enables TLS 1.2, sets it as the default for the .NET version ADSync uses, 
+# PowerShell script that enables TLS 1.2, sets it as the default for the .NET version ADSync uses, 
 # and updates the selected UDF with details on it's configuration
 
 # Script must be run as a user with system access
