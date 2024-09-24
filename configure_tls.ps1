@@ -12,8 +12,6 @@ $udf = "Custom27"
 # ^ CONFIG ^
 
 
-
-
 # Handle key entries
 function verify_keys {
     # Keep track of how many keys already exist while creating ones that don't
