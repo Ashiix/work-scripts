@@ -8,7 +8,7 @@
 # Set script's data path, obscured for privacy; must either have the data path ($env:script_data_path) be set in Datto,
 # or be changed to include full path
 $data_path = "$env:script_data_path\Disk\usage_history.json"
-# UDF to save to data to; must be changed to target UDF
+# UDF to save data to; must be changed to target UDF
 $udf = "Custom18"
 # ^ CONFIG ^
 

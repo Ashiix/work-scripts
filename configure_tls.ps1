@@ -1,3 +1,19 @@
+# PowerShell script that enabled enables TLS 1.2, sets it as the default for the .NET version ADSync uses, 
+# and updates the selected UDF with details on it's configuration
+
+# Script must be run as a user with system access
+
+
+# CONFIG
+# Override the reboot environment variable set by the Datto component, also useful if running outside a component
+$reboot_override = $false
+# UDF to save data to; must be changed to target UDF
+$udf = "Custom27"
+# ^ CONFIG ^
+
+
+
+
 # Handle key entries
 function verify_keys {
     # Keep track of how many keys already exist while creating ones that don't
@@ -122,10 +138,15 @@ function update_udf {
     }
 
     # Update UDF
-    REG ADD HKEY_LOCAL_MACHINE\SOFTWARE\CentraStage /v "Custom27" /t REG_SZ /d "$($udf_string)" /f
+    REG ADD HKEY_LOCAL_MACHINE\SOFTWARE\CentraStage /v $udf /t REG_SZ /d "$($udf_string)" /f
 }
 
 function configure_tls {
+    # Handle reboot override setting
+    if ($reboot_override) {
+        $env:schedule_reboot = $true
+    }
+    # Only proceed with script of ADSync is both installed and running
     Write-Host "Checking ADSync status..."
     try {
         $sync_state = (Get-Service "ADSync" -ErrorAction Stop | Select-Object Status) 
