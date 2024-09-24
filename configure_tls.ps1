@@ -5,8 +5,10 @@
 
 
 # CONFIG
-# Override the reboot environment variable set by the Datto component, also useful if running outside a component
-$reboot_override = $false
+# Override the reboot environment variable set by the Datto component; useful if running outside a component
+$override_reboot = $false
+# Override the ADSync check; useful for testing on a local machine
+$override_adsync_check = $false
 # UDF to save data to; must be changed to target UDF
 $udf = "Custom27"
 # ^ CONFIG ^
@@ -141,23 +143,29 @@ function update_udf {
 
 function configure_tls {
     # Handle reboot override setting
-    if ($reboot_override) {
+    if ($override_reboot) {
         $env:schedule_reboot = $true
     }
     # Only proceed with script of ADSync is both installed and running
     Write-Host "Checking ADSync status..."
-    try {
-        $sync_state = (Get-Service "ADSync" -ErrorAction Stop | Select-Object Status) 
-        $sync_state = [bool]($sync_state -match "Running")
-        if ($sync_state) { Write-Output "ADSync installed and running, proceeding with configuration." }
-        else {
-            Write-Output "ADSync installed but not running, no need to configure: exiting."
+    .{ 
+        try {
+            if ($override_adsync_check) {
+                Write-Output "Overriding ADSync check, proceeding."
+                return
+            }
+            $sync_state = (Get-Service "ADSync" -ErrorAction Stop | Select-Object Status) 
+            $sync_state = [bool]($sync_state -match "Running")
+            if ($sync_state) { Write-Output "ADSync installed and running, proceeding with configuration." }
+            else {
+                Write-Output "ADSync installed but not running, no need to configure: exiting."
+                exit 0
+            }
+        }
+        catch {
+            Write-Host "ADSync not installed on machine, no need to configure: exiting"
             exit 0
         }
-    }
-    catch {
-        Write-Host "ADSync not installed on machine, no need to configure: exiting"
-        exit 0
     }
 
     Write-Host "Checking status of registry keys..."
