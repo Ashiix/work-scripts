@@ -13,11 +13,6 @@ $udf = "Custom18"
 # ^ CONFIG ^
 
 
-# create a ticket in cw if rate of growth is too high
-# not weekly, monthly, yearly
-# 
-
-
 # Get disk usage history
 function usage_history {
     param (
