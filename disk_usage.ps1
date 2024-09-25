@@ -56,6 +56,24 @@ function usage_history {
     }
 }
 
+function generate_check_udf {
+    param (
+        $change,
+        $name
+    )
+    # Add data if it exists
+    if ($change.Keys -gt 0) {
+        $staged_udf = "$name - "
+        foreach ($pair in $change.GetEnumerator()) {
+            $pair_drive = $pair.Name
+            $pair_change = $pair.Value
+            $staged_udf += "${pair_drive}:$pair_change%, "
+        }
+        return $staged_udf.Substring(0, $staged_udf.Length - 2)
+    }
+}
+
+
 # Wrap in function to prevent a partially downloaded/corrupted script from running
 function disk_usage {
     #Initialize variables
@@ -65,9 +83,6 @@ function disk_usage {
     $sorted_usage_history = [Ordered]@{}
     Set-Item env:used_drives -Value('')
     $percent_used_string = ""
-    $daily_change = [Ordered]@{}
-    $weekly_change = [Ordered]@{}
-    $monthly_change = [Ordered]@{}
     $udf_string = ""
 
     # Create directory for script data if it doesn't exist
@@ -101,7 +116,7 @@ function disk_usage {
         $percent_used_string += $_.Key + ":" + $_.Value + " | "
     }
     # Retrieve the history json and store as odict
-    $history_json = (Get-Content $data_path | ConvertF~rom-Json)
+    $history_json = (Get-Content $data_path | ConvertFrom-Json)
     ($history_json).psobject.properties | ForEach-Object { $usage_history[$_.Name] = $_.Value }
     # Retrieve and store UNIX timestamp
     $present_date_present_time = [int](Get-Date -UFormat %s -Millisecond 0)
@@ -117,40 +132,18 @@ function disk_usage {
     }
 
     # Using the most recent timestamp value, iterate through timestamps until it finds one that is one day/week/month older
-    $daily_change = usage_history 83200 3 $sorted_usage_history $percent_used $percent_used_string 
-    $weekly_change = usage_history 601200 4 $sorted_usage_history $percent_used $percent_used_string 
-    $monthly_change = usage_history 2588400 5 $sorted_usage_history $percent_used $percent_used_string 
+    $daily_change = usage_history 86400 3 $sorted_usage_history $percent_used $percent_used_string 
+    $weekly_change = usage_history 604800 4 $sorted_usage_history $percent_used $percent_used_string 
+    $monthly_change = usage_history 2629746 5 $sorted_usage_history $percent_used $percent_used_string
+    $yearly_change = usage_history 31556952 6 $sorted_usage_history $percent_used $percent_used_string
+    # TODO:
+    # $yearly_change
 
-    # Add daily data if it exists
-    if ($daily_change.Keys -gt 0) {
-        $udf_string = "Daily - "
-        foreach ($pair in $daily_change.GetEnumerator()) {
-            $pair_drive = $pair.Name
-            $pair_change = $pair.Value
-            $udf_string += "${pair_drive}:$pair_change%, "
-        }
-        $udf_string = $udf_string.Substring(0, $udf_string.Length - 2)
-    }
-    # Add weekly data if it exists
-    if ($weekly_change.Keys -gt 0) {
-        $udf_string += " | Weekly - "
-        foreach ($pair in $weekly_change.GetEnumerator()) {
-            $pair_drive = $pair.Name
-            $pair_change = $pair.Value
-            $udf_string += "${pair_drive}:$pair_change%, "
-        }
-        $udf_string = $udf_string.Substring(0, $udf_string.Length - 2)
-    }
-    # Add monthly data if it exists
-    if ($monthly_change.Keys -gt 0) {
-        $udf_string += " | Monthly - "
-        foreach ($pair in $monthly_change.GetEnumerator()) {
-            $pair_drive = $pair.Name
-            $pair_change = $pair.Value
-            $udf_string += "${pair_drive}:$pair_change%, "
-        }
-        $udf_string = $udf_string.Substring(0, $udf_string.Length - 2)
-    }
+    # Create UDF string
+    $udf_string += $(generate_check_udf $daily_change "Daily")
+    $udf_string += $(generate_check_udf $weekly_change " | Weekly")
+    $udf_string += $(generate_check_udf $monthly_change " | Monthly")
+    $udf_string += $(generate_check_udf $yearly_change " | Yearly")
 
     # Write data to console
     Write-Output $udf_string
