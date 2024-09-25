@@ -101,8 +101,8 @@ function disk_usage {
         $percent_used_string += $_.Key + ":" + $_.Value + " | "
     }
     # Retrieve the history json and store as odict
-    $history_json = (Get-Content $data_path | ConvertFrom-Json)
-($history_json).psobject.properties | ForEach-Object { $usage_history[$_.Name] = $_.Value }
+    $history_json = (Get-Content $data_path | ConvertF~rom-Json)
+    ($history_json).psobject.properties | ForEach-Object { $usage_history[$_.Name] = $_.Value }
     # Retrieve and store UNIX timestamp
     $present_date_present_time = [int](Get-Date -UFormat %s -Millisecond 0)
     # Add the newly acquired data to the history odict
