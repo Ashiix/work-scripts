@@ -136,8 +136,6 @@ function disk_usage {
     $weekly_change = usage_history 604800 4 $sorted_usage_history $percent_used $percent_used_string 
     $monthly_change = usage_history 2629746 5 $sorted_usage_history $percent_used $percent_used_string
     $yearly_change = usage_history 31556952 6 $sorted_usage_history $percent_used $percent_used_string
-    # TODO:
-    # $yearly_change
 
     # Create UDF string
     $udf_string += $(generate_check_udf $daily_change "Daily")
