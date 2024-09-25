@@ -78,14 +78,14 @@ $usage_history | ConvertTo-Json | Out-File $data_path
 
 # Iterate through previously saved usage data, save daily/weekly/monthly percent increase/decrease to UDF for each drive, 
 # output information to StdOut for recordkeeping
-$reversed_usage_history = $usage_history.GetEnumerator() | Sort-Object -Descending Name
+$sorted_usage_history = $usage_history.GetEnumerator() | Sort-Object -Descending Name
 
 # Using the most recent timestamp value, iterate through timestamps until it finds one that is one day/week/month older
 # If there are 2 and the first and last are over 23 hours apart (82800), calculate daily percentage change
 if ($usage_history.Count -ge 3) {
-    foreach ($pair in $reversed_usage_history) {
+    foreach ($pair in $sorted_usage_history) {
         # Find most recent usage that is older than one day
-        if ($reversed_usage_history[0].Name-83200 -ge $pair.Name) {
+        if ($sorted_usage_history[0].Name-83200 -ge $pair.Name) {
             $daily_used_string = $pair.Value
             break
         }
@@ -104,9 +104,9 @@ if ($usage_history.Count -ge 3) {
 
 # If there are 3 and the first and last are over one week -1 hour apart (601200), calculate weekly percentage change
 if ($usage_history.Count -ge 4) {
-    foreach ($pair in $reversed_usage_history) {
+    foreach ($pair in $sorted_usage_history) {
         # Find most recent usage that is older than one week
-        if ($reversed_usage_history[0].Name-601200 -ge $pair.Name) {
+        if ($sorted_usage_history[0].Name-601200 -ge $pair.Name) {
             $weekly_used_string = $pair.Value
             break
         }
@@ -124,9 +124,9 @@ if ($usage_history.Count -ge 4) {
 }
 # If there are 4 and the first and last are over one month -1 hour apart (2588400), calculate monthly percentage change
 if ($usage_history.Count -ge 5) {
-    foreach ($pair in $reversed_usage_history) {
+    foreach ($pair in $sorted_usage_history) {
         # Find most recent usage that is older than one month
-        if ($reversed_usage_history[0].Name-2588400 -ge $pair.Name) {
+        if ($sorted_usage_history[0].Name-2588400 -ge $pair.Name) {
             $monthly_used_string = $pair.Value
             break
         }
