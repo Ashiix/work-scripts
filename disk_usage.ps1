@@ -13,8 +13,9 @@ $udf = "Custom18"
 # ^ CONFIG ^
 
 
-# Get disk usage history
+# Function to calculate usage history
 function usage_history {
+    # Set parameters
     param (
         $time_difference, 
         $number_entries,
@@ -22,16 +23,20 @@ function usage_history {
         $percent_used, 
         $percent_used_string
     )
+    # In try/catch for error handling in case of invalid time dif criteria
     try {
+        # Create new change var in current scope
         $change = [Ordered]@{}
+        # Verify that the number of entries in the history json is enough to calculate data
         if ($sorted_usage_history.Count -ge $number_entries) {
+            # Find most recent usage that is older than $time_difference
             foreach ($pair in $sorted_usage_history.GetEnumerator()) {
-                # Find most recent usage that is older than $time_difference
                 if ($sorted_usage_history.Keys[0] - $time_difference -ge $pair.Key) {
                     $used_string = $pair.Value
                     break
                 }
             }
+            # Convert usage string to ordered list
             $prev_used = $used_string.replace(' ', '').split('|')
             for ($i = 0; $i -lt $percent_used.Count; $i++) {
                 # Get previous usage
@@ -40,6 +45,7 @@ function usage_history {
                 $iterated_current_usage = $percent_used_string.replace(' ', '').split('|')[$i].split(':')[1]
                 $change += @{$prev_used[$i].split(':')[0] = [int]((($iterated_current_usage - $iterated_old_usage) / $iterated_old_usage) * 100) }
             }
+            # Return generated change data
             return $change
         }
         else {
@@ -51,7 +57,8 @@ function usage_history {
     }
 }
 
-function generate_check_udf {
+function generate_staging_udf {
+    # Set parameters
     param (
         $change,
         $name
@@ -133,10 +140,10 @@ function disk_usage {
     $yearly_change = usage_history 31556952 6 $sorted_usage_history $percent_used $percent_used_string
 
     # Create UDF string
-    $udf_string += $(generate_check_udf $daily_change "Daily")
-    $udf_string += $(generate_check_udf $weekly_change " | Weekly")
-    $udf_string += $(generate_check_udf $monthly_change " | Monthly")
-    $udf_string += $(generate_check_udf $yearly_change " | Yearly")
+    $udf_string += $(generate_staging_udf $daily_change "Daily")
+    $udf_string += $(generate_staging_udf $weekly_change " | Weekly")
+    $udf_string += $(generate_staging_udf $monthly_change " | Monthly")
+    $udf_string += $(generate_staging_udf $yearly_change " | Yearly")
 
     # Write data to console
     Write-Output $udf_string
