@@ -13,6 +13,16 @@ $udf = "Custom18"
 # ^ CONFIG ^
 
 
+# create a ticket in cw if rate of growth is too high
+# not weekly, monthly, yearly
+# 
+
+
+# Get disk usage history
+function usage_history($time_difference) {
+    return
+}
+
 # Wrap in function to prevent a partially downloaded/corrupted script from running
 function disk_usage {
 #Initialize variables
@@ -71,11 +81,11 @@ $usage_history | ConvertTo-Json | Out-File $data_path
 $reversed_usage_history = $usage_history.GetEnumerator() | Sort-Object -Descending Name
 
 # Using the most recent timestamp value, iterate through timestamps until it finds one that is one day/week/month older
-# If there are 2 and the first and last are over 24 hours apart (86400), calculate daily percentage change
+# If there are 2 and the first and last are over 23 hours apart (82800), calculate daily percentage change
 if ($usage_history.Count -ge 3) {
     foreach ($pair in $reversed_usage_history) {
         # Find most recent usage that is older than one day
-        if ($reversed_usage_history[0].Name-86400 -ge $pair.Name) {
+        if ($reversed_usage_history[0].Name-83200 -ge $pair.Name) {
             $daily_used_string = $pair.Value
             break
         }
@@ -92,11 +102,11 @@ if ($usage_history.Count -ge 3) {
     Write-Output "Not enough entries to calculate daily."
 }
 
-# If there are 3 and the first and last are over one week apart (604800), calculate weekly percentage change
+# If there are 3 and the first and last are over one week -1 hour apart (601200), calculate weekly percentage change
 if ($usage_history.Count -ge 4) {
     foreach ($pair in $reversed_usage_history) {
         # Find most recent usage that is older than one week
-        if ($reversed_usage_history[0].Name-604800 -ge $pair.Name) {
+        if ($reversed_usage_history[0].Name-601200 -ge $pair.Name) {
             $weekly_used_string = $pair.Value
             break
         }
@@ -112,11 +122,11 @@ if ($usage_history.Count -ge 4) {
 } else {
     Write-Output "Not enough entries to calculate weekly."
 }
-# If there are 4 and the first and last are over one month apart (2592000), calculate monthly percentage change
+# If there are 4 and the first and last are over one month -1 hour apart (2588400), calculate monthly percentage change
 if ($usage_history.Count -ge 5) {
     foreach ($pair in $reversed_usage_history) {
         # Find most recent usage that is older than one month
-        if ($reversed_usage_history[0].Name-2592000 -ge $pair.Name) {
+        if ($reversed_usage_history[0].Name-2588400 -ge $pair.Name) {
             $monthly_used_string = $pair.Value
             break
         }
