@@ -10,6 +10,11 @@
 $data_path = "$env:script_data_path\Disk\usage_history.json"
 # UDF to save data to; must be changed to target UDF
 $udf = "Custom18"
+# Method of reporting spikes
+# Valid methods are File, Registry
+$alert_method = "Registry"
+# Path to registy key for sending alerts to; must be in path, set in Datto, or changed below
+$reg_key_location = $env:disk_alert_key
 # ^ CONFIG ^
 
 
@@ -75,6 +80,29 @@ function generate_staging_udf {
     }
 }
 
+# Generate an alert file with a unique name
+function alert_file {
+    param (
+        $present_date_present_time
+    )
+    New-Item -Path $data_path\.. -Name "alert_$present_date_present_time" -ItemType File
+}
+
+function alert_regkey {
+    param (
+        $present_date_present_time
+    )
+    try { New-Item "$reg_key_location" -ErrorAction Stop }
+    catch { Write-Host "Key already exists, skipping creation." }
+    REG ADD $reg_key_location /v "Disk_Alert" /t REG_SZ /d "$present_date_present_time" /f
+}
+
+function generate_alert_string {
+    param (
+        $drives
+    )
+    "Usage spike detected on $drives"
+}
 
 # Wrap in function to prevent a partially downloaded/corrupted script from running
 function disk_usage {
@@ -86,6 +114,7 @@ function disk_usage {
     Set-Item env:used_drives -Value('')
     $percent_used_string = ""
     $udf_string = ""
+    $alert_drives = ""
 
     # Create directory for script data if it doesn't exist
     if (!(Test-Path $data_path)) {
@@ -144,10 +173,23 @@ function disk_usage {
     $udf_string += $(generate_staging_udf $weekly_change " | Weekly")
     $udf_string += $(generate_staging_udf $monthly_change " | Monthly")
     $udf_string += $(generate_staging_udf $yearly_change " | Yearly")
-
     # Write data to console
     Write-Output $udf_string
     # Add history data to UDF
     REG ADD HKEY_LOCAL_MACHINE\SOFTWARE\CentraStage /v $udf /t REG_SZ /d "$udf_string" /f
+
+    # Create alert if there is any daily drive change over 30%
+    $daily_change.GetEnumerator() | ForEach-Object {
+        $alert_drives += $_.Key
+        if ([Math]::Abs([int]$_.Value) -ge 30) {
+            $alert_drives += $_.Key
+            if ($alert_method -eq "File") {
+                alert_file $present_date_present_time
+            }
+            elseif ($alert_method -eq "Registry") {
+                alert_regkey $present_date_present_time
+            }
+        }
+    }
 }
 disk_usage
