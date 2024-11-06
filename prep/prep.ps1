@@ -52,13 +52,7 @@ function Prep {
         Write-Host "No matching software found for $oem. Proceeding with rest of configuration."
     }
 
-    # Run Windows updates
-
     # Power settings configuration
-
-    # Disable UAC
-    Write-Host "Disabling UAC, device requires reboot."
-    Set-ItemProperty -Path REGISTRY::HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\System -Name ConsentPromptBehaviorAdmin -Value 0
 
     # Install DEDR
 
