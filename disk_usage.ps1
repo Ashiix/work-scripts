@@ -9,10 +9,10 @@
 # or be changed to include full path
 $data_path = "$env:script_data_path\Disk\usage_history.json"
 # UDF to save data to; must be changed to target UDF
-$udf = "Custom4"
+$udf = 'Custom4'
 # Method of reporting spikes
 # Valid methods are File, Registry
-$alert_method = "Registry"
+$alert_method = 'Registry'
 # Path to registy key for sending alerts to; must be in path, set in Datto, or changed below
 $reg_key_location = $env:disk_alert_key
 # ^ CONFIG ^
@@ -54,11 +54,11 @@ function usage_history {
             return $change
         }
         else {
-            Write-Host "Not enough entries to calculate usage."
+            Write-Host 'Not enough entries to calculate usage.'
         }
     }
     catch {
-        Write-Host "No entries that match time difference criteria."
+        Write-Host 'No entries that match time difference criteria.'
     }
 }
 
@@ -93,8 +93,8 @@ function alert_regkey {
         $present_date_present_time
     )
     try { New-Item "$reg_key_location" -ErrorAction Stop }
-    catch { Write-Host "Key already exists, skipping creation." }
-    REG ADD $reg_key_location /v "Disk_Alert" /t REG_SZ /d "$present_date_present_time" /f
+    catch { Write-Host 'Key already exists, skipping creation.' }
+    REG ADD $reg_key_location /v 'Disk_Alert' /t REG_SZ /d "$present_date_present_time" /f
 }
 
 function generate_alert_string {
@@ -112,13 +112,13 @@ function disk_usage {
     $usage_history = [Ordered]@{}
     $sorted_usage_history = [Ordered]@{}
     Set-Item env:used_drives -Value('')
-    $percent_used_string = ""
-    $udf_string = ""
-    $alert_drives = ""
+    $percent_used_string = ''
+    $udf_string = ''
+    $alert_drives = ''
 
     # Create directory for script data if it doesn't exist
     if (!(Test-Path $data_path)) {
-        "Data directory not found, creating now."
+        'Data directory not found, creating now.'
         mkdir "$env:script_data_path\Disk"
         New-Item $data_path
     }
@@ -144,7 +144,7 @@ function disk_usage {
 
     # Create a string with the percentage used to store in the $usage_history odict
     $percent_used.GetEnumerator() | ForEach-Object {
-        $percent_used_string += $_.Key + ":" + $_.Value + " | "
+        $percent_used_string += $_.Key + ':' + $_.Value + ' | '
     }
     # Retrieve the history json and store as odict
     $history_json = (Get-Content $data_path | ConvertFrom-Json)
@@ -169,10 +169,10 @@ function disk_usage {
     $yearly_change = usage_history 31556952 6 $sorted_usage_history $percent_used $percent_used_string
 
     # Create UDF string
-    $udf_string += $(generate_staging_udf $daily_change "Daily")
-    $udf_string += $(generate_staging_udf $weekly_change " | Weekly")
-    $udf_string += $(generate_staging_udf $monthly_change " | Monthly")
-    $udf_string += $(generate_staging_udf $yearly_change " | Yearly")
+    $udf_string += $(generate_staging_udf $daily_change 'Daily')
+    $udf_string += $(generate_staging_udf $weekly_change ' | Weekly')
+    $udf_string += $(generate_staging_udf $monthly_change ' | Monthly')
+    $udf_string += $(generate_staging_udf $yearly_change ' | Yearly')
     # Write data to console
     Write-Output $udf_string
     # Add history data to UDF
@@ -183,10 +183,10 @@ function disk_usage {
         $alert_drives += $_.Key
         if ([Math]::Abs([int]$_.Value) -ge 30) {
             $alert_drives += $_.Key
-            if ($alert_method -eq "File") {
+            if ($alert_method -eq 'File') {
                 alert_file $present_date_present_time
             }
-            elseif ($alert_method -eq "Registry") {
+            elseif ($alert_method -eq 'Registry') {
                 alert_regkey $present_date_present_time
             }
         }
