@@ -9,7 +9,7 @@
 # or be changed to include full path
 $data_path = "$env:script_data_path\Disk\usage_history.json"
 # UDF to save data to; must be changed to target UDF
-$udf = "Custom18"
+$udf = "Custom4"
 # Method of reporting spikes
 # Valid methods are File, Registry
 $alert_method = "Registry"
