@@ -126,7 +126,7 @@ function disk_usage {
     # Fetch usage data from Win32_LogicalDisk and filter out excess data
     $usage_table = (Get-CimInstance -ClassName Win32_LogicalDisk | Select-Object -Property DeviceID, @{'Name' = 'Size'; Expression = { [int]($_.Size / 1GB) } }, @{'Name' = 'Free'; Expression = { [int]($_.FreeSpace / 1GB) } }) | Out-String
     # Remove trailing : from the drive identifier to make values easier to work with
-    $usage_table = ($usage_table -replace ‘[:]' -replace '[-]').Trim()
+    $usage_table = ($usage_table -replace '[:]' -replace '[-]').Trim()
     # Get number of drives in machine by taking the table and split based on carriage returns
     $table_elements = ($usage_table -split '\n').Length
     # Iterate through table objects and create a odict
