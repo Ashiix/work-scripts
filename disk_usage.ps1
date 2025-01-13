@@ -1,3 +1,5 @@
+#Requires -Version 5
+
 # Powershell script that monitors disk usage over extended periods of time and saves the percentage change in a Datto UDF
 
 # User must have access to the CentraStage registry key to save to a UDF, if run as a component it will be run as an administrator that does
@@ -28,29 +30,21 @@ function usage_history {
         $percent_used, 
         $percent_used_string
     )
-    # In try/catch for error handling in case of invalid time dif criteria
     try {
-        # Create new change var in current scope
-        $change = [Ordered]@{}
-        # Verify that the number of entries in the history json is enough to calculate data
+        $change = New-Object System.Collections.Specialized.OrderedDictionary
         if ($sorted_usage_history.Count -ge $number_entries) {
-            # Find most recent usage that is older than $time_difference
             foreach ($pair in $sorted_usage_history.GetEnumerator()) {
-                if ($sorted_usage_history.Keys[0] - $time_difference -ge $pair.Key) {
+                if ([int]$sorted_usage_history.Keys[0] - $time_difference -ge [int]$pair.Key) {
                     $used_string = $pair.Value
                     break
                 }
             }
-            # Convert usage string to ordered list
             $prev_used = $used_string.replace(' ', '').split('|')
             for ($i = 0; $i -lt $percent_used.Count; $i++) {
-                # Get previous usage
                 $iterated_old_usage = $prev_used[$i].split(':')[1]
-                # Get current usage
                 $iterated_current_usage = $percent_used_string.replace(' ', '').split('|')[$i].split(':')[1]
-                $change += @{$prev_used[$i].split(':')[0] = [int]((($iterated_current_usage - $iterated_old_usage) / $iterated_old_usage) * 100) }
+                $change.Add($prev_used[$i].split(':')[0], [int]((($iterated_current_usage - $iterated_old_usage) / $iterated_old_usage) * 100))
             }
-            # Return generated change data
             return $change
         }
         else {
@@ -108,9 +102,9 @@ function generate_alert_string {
 function disk_usage {
     #Initialize variables
     $drives_iterated = ''
-    $percent_used = [Ordered]@{}
-    $usage_history = [Ordered]@{}
-    $sorted_usage_history = [Ordered]@{}
+    $percent_used = New-Object System.Collections.Specialized.OrderedDictionary
+    $usage_history = New-Object System.Collections.Specialized.OrderedDictionary
+    $sorted_usage_history = New-Object System.Collections.Specialized.OrderedDictionary
     Set-Item env:used_drives -Value('')
     $percent_used_string = ''
     $udf_string = ''
@@ -119,12 +113,14 @@ function disk_usage {
     # Create directory for script data if it doesn't exist
     if (!(Test-Path $data_path)) {
         'Data directory not found, creating now.'
-        mkdir "$env:script_data_path\Disk"
-        New-Item $data_path
+        New-Item -Path "$env:script_data_path\Disk" -ItemType Directory -Force | Out-Null
+        New-Item -Path $data_path -ItemType File -Force | Out-Null
     }
 
     # Fetch usage data from Win32_LogicalDisk and filter out excess data
-    $usage_table = (Get-CimInstance -ClassName Win32_LogicalDisk | Select-Object -Property DeviceID, @{'Name' = 'Size'; Expression = { [int]($_.Size / 1GB) } }, @{'Name' = 'Free'; Expression = { [int]($_.FreeSpace / 1GB) } }) | Out-String
+    $usage_table = (Get-WmiObject -Class Win32_LogicalDisk | 
+        Select-Object -Property DeviceID, @{'Name' = 'Size'; Expression = { [int]($_.Size / 1GB) } }, 
+        @{'Name' = 'Free'; Expression = { [int]($_.FreeSpace / 1GB) } }) | Out-String
     # Remove trailing : from the drive identifier to make values easier to work with
     $usage_table = ($usage_table -replace '[:]' -replace '[-]').Trim()
     # Get number of drives in machine by taking the table and split based on carriage returns
@@ -132,12 +128,12 @@ function disk_usage {
     # Iterate through table objects and create a odict
     for ($line = 2; $line -lt $table_elements; $line++) {
         # Get drive indicator
-        $iterated_drive = ((($usage_table -split '\n')[$line]).Substring(0, 1))
+        $iterated_drive = ((($usage_table -split "`r`n")[$line]).Substring(0, 1))
         $drives_iterated += "$iterated_drive "
         # Use regex to remove excess spaces betwen elements to allow splitting based on whitespace, and fetch drive usage from clean string
-        $iterated_drive_usage = [regex]::Replace((($usage_table -split '\n')[$line].Substring(9).Trim()), '\s+', ' ')
+        $iterated_drive_usage = [regex]::Replace((($usage_table -split "`r`n")[$line].Substring(9).Trim()), '\s+', ' ')
         # Calculate a whole number percentage for used drive
-        $percent_used += @{$iterated_drive = ([int]((([int]$iterated_drive_usage.Split(' ')[0] - [int]$iterated_drive_usage.Split(' ')[1]) / [int]$iterated_drive_usage.Split(' ')[0]) * 100)) }
+        $percent_used.Add($iterated_drive, ([int]((([int]$iterated_drive_usage.Split(' ')[0] - [int]$iterated_drive_usage.Split(' ')[1]) / [int]$iterated_drive_usage.Split(' ')[0]) * 100)))
     }
     # Remove trailing space from iterated list
     $drives_iterated = $drives_iterated.Trim()
@@ -147,14 +143,22 @@ function disk_usage {
         $percent_used_string += $_.Key + ':' + $_.Value + ' | '
     }
     # Retrieve the history json and store as odict
-    $history_json = (Get-Content $data_path | ConvertFrom-Json)
-    ($history_json).psobject.properties | ForEach-Object { $usage_history[$_.Name] = $_.Value }
+    if (Test-Path $data_path) {
+        $history_json = Get-Content $data_path | ConvertFrom-Json
+        if ($history_json) {
+            $history_json.psobject.properties | ForEach-Object { $usage_history.Add($_.Name, $_.Value) }
+        }
+    }
     # Retrieve and store UNIX timestamp
-    $present_date_present_time = [int](Get-Date -UFormat %s -Millisecond 0)
+    $present_date_present_time = [int][double]::Parse((Get-Date -UFormat %s))
     # Add the newly acquired data to the history odict
-    $usage_history += @{[String]$present_date_present_time = $percent_used_string }
+    $usage_history.Add([String]$present_date_present_time, $percent_used_string)
+    # Ensure directory exists before writing
+    if (!(Test-Path (Split-Path $data_path -Parent))) {
+        New-Item -Path (Split-Path $data_path -Parent) -ItemType Directory -Force | Out-Null
+    }
     # Save the full history odict to disk in json for use on next execution
-    $usage_history | ConvertTo-Json | Out-File $data_path
+    $usage_history | ConvertTo-Json | Set-Content -Path $data_path -Force
 
     # Iterate through previously saved usage data, save daily/weekly/monthly percent increase/decrease to UDF for each drive, 
     # output information to StdOut for recordkeeping
