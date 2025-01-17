@@ -1,4 +1,5 @@
 # PowerShell script for prepping work machines
+# Requires WDT scripts extracted to .\src\wdt\ (https://github.com/LeDragoX/Win-Debloat-Tools/tree/main/src/scripts)
 
 # CONFIG
 # Only installation method at present, may add a more sane one later
@@ -25,6 +26,15 @@ function Prep {
     Get-WindowsUpdate
     Write-Host "installing updates..."
     Install-WindowsUpdate -AcceptAll
+
+    # Debloat scripts
+    $run_debloat = Read-Host 'Run debloat scripts? (Y/n)'
+        if ($run_debloat.ToLower() -eq 'y') {
+            .\src\wdt\Backup-System.ps1
+        }
+        else {
+            Write-Host "Skipping debloat."
+        }
 
     # Install vendor software 
     $oem = (Get-WmiObject -Class Win32_ComputerSystem -Property Manufacturer).Manufacturer
