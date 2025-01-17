@@ -34,14 +34,14 @@ function usage_history {
         $change = New-Object System.Collections.Specialized.OrderedDictionary
         if ($sorted_usage_history.Count -ge $number_entries) {
             foreach ($pair in $sorted_usage_history.GetEnumerator()) {
-                if ([int]$sorted_usage_history.Keys[0] - $time_difference -ge [int]$pair.Key) {
+                if ([int]$sorted_usage_history.Keys[0].Split(' ')[0] - $time_difference -ge [int]$pair.Key) {
                     $used_string = $pair.Value
                     break
                 }
             }
             $prev_used = $used_string.replace(' ', '').split('|')
             for ($i = 0; $i -lt $percent_used.Count; $i++) {
-                $iterated_old_usage = $prev_used[$i].split(':')[1]
+                $iterated_old_usage = $prev_used[$i].Split(':')[1]
                 $iterated_current_usage = $percent_used_string.replace(' ', '').split('|')[$i].split(':')[1]
                 $change.Add($prev_used[$i].split(':')[0], [int]((($iterated_current_usage - $iterated_old_usage) / $iterated_old_usage) * 100))
             }
