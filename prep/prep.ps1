@@ -6,11 +6,9 @@
 $hp_install_method = 'bundle'
 # ^ CONFIG ^
 
-
-
 function Prep {
     # Initialize static variables
-    $wdt_dir = '.\src\wdt\scripts\'
+    #$wdt_dir = '.\src\wdt\scripts\'
 
     # Handle directory generation
     $data_path = "$env:script_data_path\Prep"
