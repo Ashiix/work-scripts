@@ -32,15 +32,16 @@ if ($history_method -eq 'lastloadtime') {
         $reg_values = Get-ItemProperty -Path $reg_key -ErrorAction SilentlyContinue
         $load_time = 0
         try {
-            Write-Output "Attempting local profile load time."
+            Write-Output 'Attempting local profile load time.'
             $load_time = Get-LocalLoadTime($reg_values)
-            Write-Output "Using local profile load time."
-        } catch {
+            Write-Output 'Using local profile load time.'
+        }
+        catch {
             try {
-                Write-Output "Failed..."
-                Write-Output "Attempting profile load time."
+                Write-Output 'Failed...'
+                Write-Output 'Attempting profile load time.'
                 $load_time = Get-LoadTime($reg_values)
-                Write-Output "Using profile load time."
+                Write-Output 'Using profile load time.'
             }
             catch {
                 Write-Host "Failed, skipping user.`n"
@@ -62,7 +63,7 @@ if ($history_method -eq 'lastloadtime') {
     }
 }
 
-Write-Output "Removing users...:"
+Write-Output 'Removing users...:'
 $to_remove | ForEach-Object {
     Write-Output $_.LocalPath.Split('\')[-1]
     $_ | Remove-CimInstance -WhatIf
