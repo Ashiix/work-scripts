@@ -3,7 +3,6 @@
 # A PowerShell script that can be run on a schedule to clean up old user profiles
 
 # CONFIG
-
 # How login history is determined: 
 $history_method = 'lastloadtime' # Default is "lastloadtime", other options are "ntuser.dat", "lastlogintime"
 # Minimum days required for profile removal (inclusive), default is 90
@@ -76,6 +75,7 @@ function Remove-OldUsers {
 }
 
 Remove-OldUsers $history_method $remove_older_than
+
 # elseif ($history_method -eq 'ntuser.dat') {
 #     Write-Output 'Using ntuser.dat method...'
 #     $standard_users = Get-CimInstance -ClassName Win32_UserProfile | Where-Object { $_.Special -eq $false }
