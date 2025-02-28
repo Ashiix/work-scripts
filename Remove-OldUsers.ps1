@@ -9,51 +9,91 @@ $history_method = 'lastloadtime' # Options are "lastloadtime", "ntuser.dat", "la
 
 # ^ CONFIG
 
+function Get-LocalLoadTime {
+    param (
+        $reg_values
+    )
+    return [DateTime]::FromFileTime("0x$($reg_values.LocalProfileLoadTimeHigh.ToString('X8'))$($reg_values.LocalProfileLoadTimeLow.ToString('X8'))")
+}   
+
+function Get-LoadTime {
+    param (
+        $reg_values
+    )
+    return [DateTime]::FromFileTime("0x$($reg_values.ProfileLoadTimeHigh.ToString('X8'))$($reg_values.ProfileLoadTimeLow.ToString('X8'))")
+} 
+
 if ($history_method -eq 'lastloadtime') {
     $standard_users = Get-CimInstance -ClassName Win32_UserProfile | Where-Object { $_.Special -eq $false }
-    
+    $to_remove = $()
     $standard_users | ForEach-Object {
         $reg_key = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\$($_.SID)"
         $reg_values = Get-ItemProperty -Path $reg_key -ErrorAction SilentlyContinue
-        $load_time = [DateTime]::FromFileTime("0x$($reg_values.LocalProfileLoadTimeHigh.ToString('X8'))$($reg_values.LocalProfileLoadTimeLow.ToString('X8'))")
-        $days_since = ([DateTime]::Now - $load_time).Days
-        $directory_size = $([Math]::Round((Get-ChildItem $_.LocalPath -Recurse -Force | Measure-Object -Property Length -Sum).Sum / 1GB, 2))
-        Write-Output $_.LocalPath.Split('\')[-1]
-        Write-Output "$load_time"
-        Write-Output "$directory_size GB"
-        Write-Output "$days_since days since last used."
-        Write-Output ''
-    }
-}
-
-elseif ($history_method -eq 'ntuser.dat') {
-    Write-Output 'Using ntuser.dat method...'
-    $standard_users = Get-CimInstance -ClassName Win32_UserProfile | Where-Object { $_.Special -eq $false }
-    $removal_targets = @()
-    foreach ($user in $standard_users) {
-        $last_modified = [System.IO.Directory]::GetLastWriteTime("$($user.LocalPath)/ntuser.dat")
-        $directory_size = $([Math]::Round((Get-ChildItem $user.LocalPath -Recurse -Force | Measure-Object -Property Length -Sum).Sum / 1GB, 2))
-        $days_since = ([DateTime]::Now - $last_modified).Days
-        Write-Output $user.LocalPath.Split('\')[-1]
-        Write-Output $last_modified
-        Write-Output "$directory_size GB"
-        Write-Output "$days_since days since last used."
-        Write-Output ''
-        if ($directory_size -ge 5.00) {
-            $removal_targets += $user
+        $load_time = 0
+        try {
+            Write-Output "Attempting local profile load time."
+            $load_time = Get-LocalLoadTime($reg_values)
+            Write-Output "Using local profile load time."
+        } catch {
+            try {
+                Write-Output "Failed..."
+                Write-Output "Attempting profile load time."
+                $load_time = Get-LoadTime($reg_values)
+                Write-Output "Using profile load time."
+            }
+            catch {
+                Write-Host "Failed, skipping user.`n"
+                $load_time = 0
+            }
+        }
+        if (-not $load_time -eq 0) {
+            $days_since = ([DateTime]::Now - $load_time).Days
+            $directory_size = $([Math]::Round((Get-ChildItem $_.LocalPath -Recurse -Force | Measure-Object -Property Length -Sum).Sum / 1GB, 2))
+            Write-Output $_.LocalPath.Split('\')[-1]
+            Write-Output "$load_time"
+            Write-Output "$directory_size GB"
+            Write-Output "$days_since days since last used."
+            Write-Output ''
+            if ($days_since -ge 90) {
+                $to_remove += @($_)
+            }
         }
     }
 }
-elseif ($history_method -eq 'lastlogintime') {
-    Write-Output 'Using lastlogintime method...'
-    $standard_users = Get-CimInstance -ClassName Win32_UserProfile | Where-Object { $_.Special -eq $false }
-    $standard_users | ForEach-Object {
-        $directory_size = $([Math]::Round((Get-ChildItem $_.LocalPath -Recurse -Force | Measure-Object -Property Length -Sum).Sum / 1GB, 2))
-        $days_since = ([DateTime]::Now - $_.LastUseTime).Days
-        Write-Output $_.LocalPath.Split('\')[-1]
-        Write-Output $_.LastUseTime
-        Write-Output "$directory_size GB"
-        Write-Output "$days_since days since last used."
-        Write-Output ''
-    }
+
+Write-Output "Users to remove:"
+$to_remove | ForEach-Object {
+    $_.Delete()
+    Write-Output $_.LocalPath.Split('\')[-1]
 }
+# elseif ($history_method -eq 'ntuser.dat') {
+#     Write-Output 'Using ntuser.dat method...'
+#     $standard_users = Get-CimInstance -ClassName Win32_UserProfile | Where-Object { $_.Special -eq $false }
+#     $removal_targets = @()
+#     foreach ($user in $standard_users) {
+#         $last_modified = [System.IO.Directory]::GetLastWriteTime("$($user.LocalPath)/ntuser.dat")
+#         $directory_size = $([Math]::Round((Get-ChildItem $user.LocalPath -Recurse -Force | Measure-Object -Property Length -Sum).Sum / 1GB, 2))
+#         $days_since = ([DateTime]::Now - $last_modified).Days
+#         Write-Output $user.LocalPath.Split('\')[-1]
+#         Write-Output $last_modified
+#         Write-Output "$directory_size GB"
+#         Write-Output "$days_since days since last used."
+#         Write-Output ''
+#         if ($directory_size -ge 5.00) {
+#             $removal_targets += $user
+#         }
+#     }
+# }
+# elseif ($history_method -eq 'lastlogintime') {
+#     Write-Output 'Using lastlogintime method...'
+#     $standard_users = Get-CimInstance -ClassName Win32_UserProfile | Where-Object { $_.Special -eq $false }
+#     $standard_users | ForEach-Object {
+#         $directory_size = $([Math]::Round((Get-ChildItem $_.LocalPath -Recurse -Force | Measure-Object -Property Length -Sum).Sum / 1GB, 2))
+#         $days_since = ([DateTime]::Now - $_.LastUseTime).Days
+#         Write-Output $_.LocalPath.Split('\')[-1]
+#         Write-Output $_.LastUseTime
+#         Write-Output "$directory_size GB"
+#         Write-Output "$days_since days since last used."
+#         Write-Output ''
+#     }
+# }
