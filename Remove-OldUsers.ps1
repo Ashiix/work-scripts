@@ -4,9 +4,10 @@
 
 # CONFIG
 
-# How login history is determined:
-$history_method = 'lastloadtime' # Options are "lastloadtime", "ntuser.dat", "lastlogintime"
-
+# How login history is determined: 
+$history_method = 'lastloadtime' # Default is "lastloadtime", other options are "ntuser.dat", "lastlogintime"
+# Minimum days required for profile removal (inclusive), default is 90
+$remove_older_than = 90
 # ^ CONFIG
 
 function Get-LocalLoadTime {
@@ -54,17 +55,17 @@ if ($history_method -eq 'lastloadtime') {
             Write-Output "$directory_size GB"
             Write-Output "$days_since days since last used."
             Write-Output ''
-            if ($days_since -ge 90) {
+            if ($days_since -ge $remove_older_than) {
                 $to_remove += @($_)
             }
         }
     }
 }
 
-Write-Output "Users to remove:"
+Write-Output "Removing users...:"
 $to_remove | ForEach-Object {
-    $_.Delete()
     Write-Output $_.LocalPath.Split('\')[-1]
+    $_ | Remove-CimInstance -WhatIf
 }
 # elseif ($history_method -eq 'ntuser.dat') {
 #     Write-Output 'Using ntuser.dat method...'
