@@ -66,11 +66,20 @@ function Remove-OldUsers {
             }
         }
     }
-
-    Write-Output "Removing users older than $remove_older_than days..."
-    $to_remove | ForEach-Object {
-        Write-Output $_.LocalPath.Split('\')[-1]
-        $_ | Remove-CimInstance -WhatIf
+    if ($to_remove) {
+        Write-Output "Removing users older than $remove_older_than days..."
+        $to_remove | ForEach-Object {
+            if ($_.SID){
+                $reg_key = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\$($_.SID)"
+                Write-Output $_.LocalPath.Split('\')[-1]
+                #Remove-Item $reg_key -Force
+                #Remove-Item $_.LocalPath -Recurse -Force
+                #Remove-Item $_.LocalPath -Recurse -Force
+                Remove-CimInstance $_
+            }
+        }
+    } else {
+        Write-Output "No users fit deletion criteria."
     }
 }
 
