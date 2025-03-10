@@ -69,7 +69,7 @@ function Remove-OldUsers {
     if ($to_remove) {
         Write-Output "Removing users older than $remove_older_than days..."
         $to_remove | ForEach-Object {
-            if ($_.SID){
+            if ($_.SID) {
                 $reg_key = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\$($_.SID)"
                 Write-Output $_.LocalPath.Split('\')[-1]
                 #Remove-Item $reg_key -Force
@@ -78,8 +78,9 @@ function Remove-OldUsers {
                 Remove-CimInstance $_
             }
         }
-    } else {
-        Write-Output "No users fit deletion criteria."
+    }
+    else {
+        Write-Output 'No users fit deletion criteria.'
     }
 }
 
