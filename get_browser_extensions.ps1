@@ -46,7 +46,7 @@ function retrieve_chromium_extensions {
         }
     }
     foreach ($extension_path in $extension_ids) {
-        $manifest = $(Get-Content $extension_path\*\manifest.json | ConvertFrom-Json) 
+        $manifest = $(Get-Content $extension_path\*\manifest.json -Raw | ConvertFrom-Json) 
         foreach ($property in $manifest.PSObject.Properties) {
             if (('short_name' -match $property.Name) -and ($property.Value -notin $excluded_names)) {
                 $extension_names += $property.Value
