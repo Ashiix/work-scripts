@@ -7,6 +7,7 @@
 $history_method = 'lastloadtime' # Default is "lastloadtime", other options are "ntuser.dat", "lastlogintime"
 # Minimum days required for profile removal (inclusive), default is 90
 $remove_older_than = 90
+$ignore_users = @("Scanner", "Treysta")
 # ^ CONFIG
 
 function Get-LocalLoadTime {
@@ -29,8 +30,8 @@ function Remove-OldUsers {
         $remove_older_than
     )
     if ($history_method -eq 'lastloadtime') {
-        $standard_users = Get-CimInstance -ClassName Win32_UserProfile | Where-Object { $_.Special -eq $false }
-        $to_remove = $()
+        $standard_users = Get-CimInstance -ClassName Win32_UserProfile | Where-Object { $_.Special -eq $false -and $_ }
+            $to_remove = $()
         $standard_users | ForEach-Object {
             $reg_key = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\$($_.SID)"
             $reg_values = Get-ItemProperty -Path $reg_key -ErrorAction SilentlyContinue
@@ -75,7 +76,7 @@ function Remove-OldUsers {
                 #Remove-Item $reg_key -Force
                 #Remove-Item $_.LocalPath -Recurse -Force
                 #Remove-Item $_.LocalPath -Recurse -Force
-                Remove-CimInstance $_
+                Remove-CimInstance -WhatIf $_
             }
         }
     }
