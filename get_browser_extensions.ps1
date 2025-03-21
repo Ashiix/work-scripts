@@ -20,6 +20,20 @@ function retrieve_chrome_data_dirs {
     return $chrome_data_dirs
 }
 
+# Function for handling Microsoft Edge
+function retrieve_edge_data_dirs {
+    param (
+        $user_profiles
+    )
+    $edge_data_dirs = @()
+    $user_profiles | ForEach-Object {
+        if (Test-Path $_\AppData\Local\Microsoft\Edge) {
+            $edge_data_dirs += "$_\AppData\Local\Microsoft\Edge\User Data"
+        }
+    }
+    return $edge_data_dirs
+}
+
 # Functions for handling various Chromium forks
 function retrieve_chromium_profiles {
     param (
@@ -39,7 +53,7 @@ function retrieve_chromium_extensions {
     )
     $extension_ids = @()
     $extension_names = @()
-    $excluded_names = @('__MSG_extName__', '__MSG_APP_NAME__', '__MSG_fullName__')
+    $excluded_names = @('__MSG_extName__', '__MSG_APP_NAME__', '__MSG_fullName__', 'Edge relevant text changes')
     Get-ChildItem $browser_profile_dir\Extensions | ForEach-Object {
         if ($_.Name -ne 'Temp') {
             $extension_ids += $_.FullName
@@ -80,6 +94,20 @@ function get_browser_extensions {
             }
         }
     }
+
+    # Handle Microsoft Edge 
+    $edge_profiles = @()
+    retrieve_edge_data_dirs $(retrieve_user_profiles) | ForEach-Object {
+        $edge_profiles += retrieve_chromium_profiles $_
+    }
+    $edge_profiles | ForEach-Object {
+        retrieve_chromium_extensions $_ | ForEach-Object {
+            if ($_ -notin $all_extensions) {
+                $all_extensions += $_
+            }
+        }
+    }
+
 
     # Return all retrieved extensions across all browsers and profiles
     return $all_extensions
