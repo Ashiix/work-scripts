@@ -55,7 +55,7 @@ function Remove-OldUsers {
             }
             if (-not $load_time -eq 0) {
                 $days_since = ([DateTime]::Now - $load_time).Days
-                $directory_size = $([Math]::Round((Get-ChildItem $_.LocalPath -Recurse -Force | Measure-Object -Property Length -Sum).Sum / 1GB, 2))
+                $directory_size = $([Math]::Round((Get-ChildItem $_.LocalPath -Recurse -Force -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum).Sum / 1GB, 2))
                 Write-Output $_.LocalPath.Split('\')[-1]
                 Write-Output "$load_time"
                 Write-Output "$directory_size GB"

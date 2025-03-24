@@ -74,9 +74,19 @@ function retrieve_chromium_extensions {
 # Functions for handling Firefox
 function retrieve_firefox_extensions {
     param (
-        $user_profile
+        $user_profiles
     )
-    return ''
+    $extensions_ids = @()
+    $extension_names = @()
+    $user_profiles | ForEach-Object {
+        if (Test-Path $_\AppData\Roaming\Mozilla\Firefox\Profiles) {
+            Get-ChildItem "$_\AppData\Roaming\Mozilla\Firefox\Profiles\*\extensions\" | ForEach-Object {
+                Write-Host $_.Name
+            }
+        }
+    }
+    Write-Host $extensions_ids
+    return $extensions_ids
 }
 
 function get_browser_extensions {
@@ -108,7 +118,8 @@ function get_browser_extensions {
         }
     }
 
-
+    # retrieve_firefox_extensions $(retrieve_user_profiles)
+    
     # Return all retrieved extensions across all browsers and profiles
     return $all_extensions
 }
