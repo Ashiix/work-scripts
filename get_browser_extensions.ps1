@@ -70,23 +70,28 @@ function retrieve_chromium_extensions {
     return $extension_names
 }
 
-
 # Functions for handling Firefox
 function retrieve_firefox_extensions {
     param (
         $user_profiles
     )
-    $extensions_ids = @()
     $extension_names = @()
+    $excluded_names = @('Form Autofill', 'Picture-In-Picture', 'Firefox Screenshots', 'WebCompat Reporter', 'Web Compatibility Interventions', 'Add-ons Search Detection', 'Light', 'Dark', 'Firefox Alpenglow', 'Fix add-ons signed before 2018 (Bug 1954818)')
     $user_profiles | ForEach-Object {
         if (Test-Path $_\AppData\Roaming\Mozilla\Firefox\Profiles) {
-            Get-ChildItem "$_\AppData\Roaming\Mozilla\Firefox\Profiles\*\extensions\" | ForEach-Object {
-                Write-Host $_.Name
+            Get-ChildItem "$_\AppData\Roaming\Mozilla\Firefox\Profiles\" | ForEach-Object {
+                if (Test-Path "$($_.FullName)\extensions.json") {
+                    $extensions_data = Get-Content "$($_.FullName)\extensions.json" -Raw | ConvertFrom-Json
+                    $extensions_data.addons | ForEach-Object {
+                        if ($_.defaultLocale.name -and ($_.defaultLocale.name -notin $excluded_names) -and ($_.defaultLocale.name -notlike 'System theme*')) {
+                            $extension_names += $_.defaultLocale.name
+                        }
+                    }
+                }
             }
         }
     }
-    Write-Host $extensions_ids
-    return $extensions_ids
+    return $extension_names
 }
 
 function get_browser_extensions {
@@ -118,7 +123,12 @@ function get_browser_extensions {
         }
     }
 
-    # retrieve_firefox_extensions $(retrieve_user_profiles)
+    # Handle Firefox
+    retrieve_firefox_extensions $(retrieve_user_profiles) | ForEach-Object {
+        if ($_ -notin $all_extensions) {
+            $all_extensions += $_
+        }
+    }
     
     # Return all retrieved extensions across all browsers and profiles
     return $all_extensions

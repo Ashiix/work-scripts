@@ -25,18 +25,7 @@ $generated_bcul = @'
 '@.replace('target_application', $env:target_application)
 $generated_bcul | Out-File $bcul_dir
 Write-Host "Current target: $env:target_application"
-
-$start_info = New-Object System.Diagnostics.ProcessStartInfo
-$start_info.FileName = "C:\Temp\bcu-x64\BCU-console.exe"
-$start_info.Arguments = "uninstall `"$bcul_dir`" /Q /U /J"
-$start_info.UseShellExecute = $false
-$start_info.LoadUserProfile = $true
-$start_info.UserName = $env:target_user
-$start_info.PasswordInClearText = "NotTestUser1!"
-$start_info.Domain = $env:COMPUTERNAME
-
 Expand-Archive .\bcu-x64.zip -DestinationPath C:\Temp\ -Force -ErrorAction SilentlyContinue
-$bcu_process = [System.Diagnostics.Process]::Start($start_info)
-$bcu_process.WaitForExit()
+Invoke-Expression "C:\Temp\bcu-x64\BCU-console.exe uninstall $bcul_dir /Q /U /J"
 Remove-Item C:\Temp\bcu-x64 -Recurse -Force
-Remove-Item $bcul_dir 
+Remove-Item $bcul_dir
