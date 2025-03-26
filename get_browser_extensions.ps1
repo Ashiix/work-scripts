@@ -1,3 +1,8 @@
+#Requires -Version 5
+# PowerShell script for collecting all installed extensions for both Chromium and Firefox-based browsers across all user and browser profiles
+
+# For once nothing to configure
+
 function retrieve_user_profiles {
     $user_profiles = @()
     Get-ChildItem C:\Users\ | ForEach-Object {
@@ -94,6 +99,7 @@ function retrieve_firefox_extensions {
     return $extension_names
 }
 
+# Main function
 function get_browser_extensions {
     $all_extensions = @()
 
