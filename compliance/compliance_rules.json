@@ -1,0 +1,32 @@
+{
+    "Rules": [
+        {
+            "SettingName": "Datto EDR Agent",
+            "Operator": "GreaterEquals",
+            "DataType": "Version",
+            "Operand": "3.17.0.2673",
+            "MoreInfoUrl": "https://edr.datto.com/help/",
+            "RemediationStrings": [
+                {
+                    "Language": "en_US",
+                    "Title": "Datto EDR Agent is outdated or uninstalled.",
+                    "Description": "A (re)deployment may be required."
+                }
+            ]
+        },
+        {
+            "SettingName": "HUNTAgent",
+            "Operator": "IsEquals",
+            "DataType": "Boolean",
+            "Operand": "True",
+            "MoreInfoUrl": "https://edr.datto.com/help/",
+            "RemediationStrings": [
+                {
+                    "Language": "en_US",
+                    "Title": "HUNTAgent is not running.",
+                    "Description": "Tamper Protection will interfere with any actions in services.msc, must be disable first."
+                }
+            ]
+        }
+    ]
+}

@@ -3,6 +3,11 @@
 
 # For once nothing to configure
 
+# Open DB connection once
+# Update DB in real time
+# Close DB connection
+# MS access DB
+
 function retrieve_user_profiles {
     $user_profiles = @()
     Get-ChildItem C:\Users\ | ForEach-Object {
