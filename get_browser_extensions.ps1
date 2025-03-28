@@ -20,7 +20,7 @@ function write_to_access_db {
     try {
         $db_connection = New-Object System.Data.OleDb.OleDbConnection
         $db_connection.ConnectionString = "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=$db_path"
-        Write-Host "Opening connection to Access DB..."
+        Write-Host 'Opening connection to Access DB...'
         $db_connection.Open()
         $db_command = New-Object System.Data.OleDb.OleDbCommand
         $db_command.Connection = $db_connection
@@ -29,14 +29,40 @@ function write_to_access_db {
             $db_command.CommandText = "INSERT INTO BrowserExtensions (ExtensionName, Endpoint, UserProfile, Browser, ScanDate) VALUES ('$($extension.Name)', '$($extension.Endpoint)', '$($extension.UserProfile)', '$($extension.Browser)', Date())"
             $db_command.ExecuteNonQuery() | Out-Null
         }
-        Write-Host "Done writing entries."
+        Write-Host 'Done writing entries.'
     }
     catch {
         Write-Error "$_"
     }
     finally {
         $db_connection.Close()
-        Write-Host "Connection to Access DB closed."
+        Write-Host 'Connection to Access DB closed.'
+    }
+}
+function write_to_sqlite_db {
+    param (
+        $extensions
+    )
+    Install-Module -Name SQLite
+    Import-Module SQLite
+    try {
+        $db_connection = New-Object System.Data.SQLite.SQLiteConnection("Data Source=$db_path;")
+        Write-Host 'Opening connection to SQLite DB...'
+        $db_connection.Open()
+        $db_command = $db_connection.CreateCommand()
+        foreach ($extension in $extensions) {
+            Write-Host "Write to DB: $extension"
+            $db_command.CommandText = "INSERT INTO BrowserExtensions (ExtensionName, Endpoint, UserProfile, Browser, ScanDate) VALUES ('$($extension.Name)', '$($extension.Endpoint)', '$($extension.UserProfile)', '$($extension.Browser)', Date())"
+            $db_command.ExecuteNonQuery() | Out-Null
+        }
+        Write-Host 'Done writing entries.'
+    }
+    catch {
+        Write-Error "$_"
+    }
+    finally {
+        $db_connection.Close()
+        Write-Host 'Connection to SQLite DB closed.'
     }
 }
 
@@ -186,4 +212,5 @@ function get_browser_extensions {
 
 $extensions = $(get_browser_extensions)
 
-write_to_access_db $extensions
+#write_to_access_db $extensions
+write_to_sqlite_db $extensions
