@@ -24,7 +24,21 @@
                 {
                     "Language": "en_US",
                     "Title": "HUNTAgent is not running.",
-                    "Description": "Tamper Protection will interfere with any actions in services.msc, must be disable first."
+                    "Description": "Tamper Protection will interfere with any actions in services.msc, must be disabled first."
+                }
+            ]
+        },
+        {
+            "SettingName": "EndpointProtectionService",
+            "Operator": "IsEquUals",
+            "DataType": "Boolean",
+            "Operand": "True",
+            "MoreInfoUrl": "https://edr.datto.com/help/",
+            "RemediationStrings": [
+                {
+                    "Language": "en_US",
+                    "Title": "EndpointProtectionService is not running.",
+                    "Description": "Tamper Protection will interfere with any actions in services.msc, must be disabled first."
                 }
             ]
         }

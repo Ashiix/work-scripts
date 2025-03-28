@@ -1,7 +1,8 @@
 #Requires -Version 5
 
 $target_application = @('Datto EDR Agent')
-$target_service = @('HUNTAgent')
+$target_service = @('HUNTAgent', 'EndpointProtectionService')
+$target_antivirus = @('Datto AV')
 $discovery_info = @{}
 
 $target_application | ForEach-Object {
