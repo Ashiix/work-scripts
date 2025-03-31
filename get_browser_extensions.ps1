@@ -1,9 +1,12 @@
 #Requires -Version 5
 # PowerShell script for collecting all installed extensions for both Chromium and Firefox-based browsers across all user and browser profiles
+# Also has SQLite and Access database integrations, easiest way to connect is to put the DB on a network share
 
 # For once nothing to configure
-# Scratch that, where's the Access database you wanna save to.
+# Scratch that, where's the database you wanna save to.
 $db_path = $env:extension_db_path
+# Database to integrate with, comment whole line to disable
+$database = "SQLite" # Options: SQLite, Access
 
 # General functions
 function retrieve_user_profiles {
@@ -212,5 +215,9 @@ function get_browser_extensions {
 
 $extensions = $(get_browser_extensions)
 
-#write_to_access_db $extensions
-write_to_sqlite_db $extensions
+if ($database -eq 'SQLite') {
+    write_to_sqlite_db $extensions
+}
+elseif ($database -eq 'Access') {
+    write_to_access_db $extensions
+}
