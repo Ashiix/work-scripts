@@ -4,9 +4,16 @@
 
 # For once nothing to configure
 # Scratch that, where's the database you wanna save to.
-$db_path = $env:extension_db_path
+$db_path = 'Z:\extensions.db' #$env:extension_db_path
 # Database to integrate with, comment whole line to disable
-$database = "SQLite" # Options: SQLite, Access
+$database = 'SQLite' # Options: SQLite, Access
+# UNC path to network share
+$share = '\\WILL-WIN11-VM\Extensions'#$env:network_share
+# Drive to map network share to
+$mapped_drive = 'Z' #$env:mapped_drive
+# And finally, what credentials to access the DB network share with
+$share_auth_user = 'ExtDBUser' #$env:share_user
+$share_auth_pword = 'extdbpword' #$env:share_pword
 
 # General functions
 function retrieve_user_profiles {
@@ -15,6 +22,23 @@ function retrieve_user_profiles {
         $user_profiles += $_.FullName
     }
     return $user_profiles
+}
+function generate_credential {
+    param (
+        $user,
+        $pword
+    )
+    $pword_secure_string = ConvertTo-SecureString $pword -AsPlainText -Force
+    $credential = New-Object System.Management.Automation.PSCredential($user, $pword_secure_string)
+    return $credential
+}
+function mount_share {
+    param (
+        $share,
+        $mapped_drive,
+        [pscredential]$credential
+    )
+    New-PSDrive -Name $mapped_drive -PSProvider FileSystem -Root $share -Credential $credential
 }
 function write_to_access_db {
     param (
@@ -46,8 +70,9 @@ function write_to_sqlite_db {
     param (
         $extensions
     )
-    Install-Module -Name SQLite
-    Import-Module SQLite
+    Import-Module PowerShellGet -Force
+    Install-Module -Name SQLite -Force
+    Import-Module SQLite -Force
     try {
         $db_connection = New-Object System.Data.SQLite.SQLiteConnection("Data Source=$db_path;")
         Write-Host 'Opening connection to SQLite DB...'
@@ -216,6 +241,7 @@ function get_browser_extensions {
 $extensions = $(get_browser_extensions)
 
 if ($database -eq 'SQLite') {
+    mount_share $share $mapped_drive $(generate_credential $share_auth_user $share_auth_pword)
     write_to_sqlite_db $extensions
 }
 elseif ($database -eq 'Access') {

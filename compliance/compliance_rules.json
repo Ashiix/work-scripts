@@ -30,7 +30,7 @@
         },
         {
             "SettingName": "EndpointProtectionService",
-            "Operator": "IsEquUals",
+            "Operator": "IsEquals",
             "DataType": "Boolean",
             "Operand": "True",
             "MoreInfoUrl": "https://edr.datto.com/help/",
@@ -39,6 +39,20 @@
                     "Language": "en_US",
                     "Title": "EndpointProtectionService is not running.",
                     "Description": "Tamper Protection will interfere with any actions in services.msc, must be disabled first."
+                }
+            ]
+        },
+        {
+            "SettingName": "TmWSCSvc",
+            "Operator": "IsEquals",
+            "DataType": "Boolean",
+            "Operand": "True",
+            "MoreInfoUrl": "https://docs.trendmicro.com/en-us/documentation/article/apex-one-as-a-service-online-help-secuirty-agent-servi",
+            "RemediationStrings": [
+                {
+                    "Language": "en_US",
+                    "Title": "TM Security is not running.",
+                    "Description": "Please check installation or redeploy."
                 }
             ]
         }

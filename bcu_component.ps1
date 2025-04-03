@@ -1,4 +1,4 @@
-#$env:target_application = 'Wave'
+#$env:target_application = 'TeamViewer'
 #$env:target_user = 'TestUser'
 $bcul_dir = 'C:\Temp\scriptable.bcul'
 $generated_bcul = @'
