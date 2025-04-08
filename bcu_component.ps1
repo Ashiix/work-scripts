@@ -1,5 +1,5 @@
-#$env:target_application = 'TeamViewer'
-#$env:target_user = 'TestUser'
+$env:target_application = 'Graphics Command Center'
+
 $bcul_dir = 'C:\Temp\scriptable.bcul'
 $generated_bcul = @'
 <?xml version="1.0" encoding="utf-16"?>
@@ -11,7 +11,7 @@ $generated_bcul = @'
       <ComparisonEntries>
         <FilterCondition>
           <InvertResults>false</InvertResults>
-          <ComparisonMethod>Any</ComparisonMethod>
+          <ComparisonMethod>Contains</ComparisonMethod>
           <FilterText>target_application</FilterText>
           <TargetPropertyId />
           <Enabled>true</Enabled>
