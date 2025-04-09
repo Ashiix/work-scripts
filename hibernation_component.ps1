@@ -10,7 +10,7 @@ function hibernation_component {
     powercfg.exe -h off
     if ($env:reenable_hibernation) {
         $job_options = New-ScheduledJobOption -RunElevated -WakeToRun
-        $job_trigger = New-JobTrigger -Daily -At '4/9/25 2:09 PM'
+        $job_trigger = New-JobTrigger -Daily -At '2:30 PM'
         Register-ScheduledJob -Name 'Reenable-Hibernation' -ScheduledJobOption $job_options -Trigger $job_trigger -ScriptBlock {
             $total_memory = 0
             Get-CimInstance -ClassName Win32_PhysicalMemory | Select-Object Capacity | ForEach-Object {
@@ -37,6 +37,8 @@ function hibernation_component {
                 Write-Output 'Hibernation re-enable threshold NOT met. '
             }
         }
+        $task_principal = New-ScheduledTaskPrincipal -UserId 'NT AUTHORITY\SYSTEM' -LogonType ServiceAccount -RunLevel Highest
+        Set-ScheduledTask -TaskPath '\Microsoft\Windows\PowerShell\ScheduledJobs' -TaskName 'Reenable-Hibernation' -Principal $task_principal
     }
 }
 
