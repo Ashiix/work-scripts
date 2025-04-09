@@ -1,15 +1,13 @@
-Get-CimInstance -Class CIM_PointingDevice | ForEach-Object {
-    Write-Host $_.PointingType
-    if ($_.PointingType -eq 8) {
-        Write-Output 'Touchscreen found, updating UDF.'
-        New-ItemProperty -Path 'HKLM:\Software\CentraStage\' -Name 'Custom20' -Value 'Touchscreen present.' -PropertyType String -Force | Out-Null
-        return
-    }
-    else {
-        Write-Output 'No PointingDevice type 8 (Touchscreen) found.'
-        New-ItemProperty -Path 'HKLM:\Software\CentraStage\' -Name 'Custom20' -Value 'No touchscreen found.' -PropertyType String -Force | Out-Null
-    }
+$udf_string = 'No touchscreen found.'
+if (Get-CimInstance -Class CIM_PointingDevice | Where-Object { $_.PointingType -eq 8 }) {
+    Write-Output 'Touchscreen found as PointingType 8.'
+    $udf_string = 'Touchscreen found.'
 }
 if (Get-PnpDevice | Where-Object { $_.FriendlyName -like '*touch screen*' }) {
-    New-ItemProperty -Path 'HKLM:\Software\CentraStage\' -Name 'Custom20' -Value 'Touchscreen present.' -PropertyType String -Force | Out-Null
+    Write-Output 'Touchscreen found from FriendlyName.'
+    $udf_string = 'Touchscreen found.'
 }
+if ($udf_string -eq 'No touchscreen found.') {
+    Write-Output $udf_string
+}
+New-ItemProperty -Path 'HKLM:\Software\CentraStage\' -Name 'Custom20' -Value $udf_string -PropertyType String -Force | Out-Null
