@@ -7,7 +7,7 @@
 $history_method = 'lastloadtime' # Default is "lastloadtime", other options are "ntuser.dat", "lastlogintime"
 # Minimum days required for profile removal (inclusive), default is 90
 $remove_older_than = 90
-$ignore_users = @("Scanner", "Treysta")
+#$ignore_users = @("Scanner", "Treysta")
 # ^ CONFIG
 
 function Get-LocalLoadTime {
@@ -71,7 +71,7 @@ function Remove-OldUsers {
         Write-Output "Removing users older than $remove_older_than days..."
         $to_remove | ForEach-Object {
             if ($_.SID) {
-                $reg_key = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\$($_.SID)"
+                #$reg_key = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\$($_.SID)"
                 Write-Output $_.LocalPath.Split('\')[-1]
                 #Remove-Item $reg_key -Force
                 #Remove-Item $_.LocalPath -Recurse -Force
