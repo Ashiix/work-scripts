@@ -1,4 +1,5 @@
-$env:target_application = 'Graphics Command Center'
+#Requires -Version 5
+#$env:target_application = ''
 
 $bcul_dir = 'C:\Temp\scriptable.bcul'
 $generated_bcul = @'
@@ -26,6 +27,6 @@ $generated_bcul = @'
 $generated_bcul | Out-File $bcul_dir
 Write-Host "Current target: $env:target_application"
 Expand-Archive .\bcu-x64.zip -DestinationPath C:\Temp\ -Force -ErrorAction SilentlyContinue
-Invoke-Expression "C:\Temp\bcu-x64\BCU-console.exe uninstall $bcul_dir /Q /U /J"
+Invoke-Expression "C:\Temp\bcu-x64\BCU-console.exe uninstall $bcul_dir /Q /U /V"
 Remove-Item C:\Temp\bcu-x64 -Recurse -Force
 Remove-Item $bcul_dir
